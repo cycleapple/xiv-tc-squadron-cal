@@ -186,11 +186,165 @@ const Calculator = {
      * @param {Array} members - Array of all members
      * @param {Object} requirements - Required stats
      * @param {number} limit - Maximum results to return
+     * @param {Object} options - Additional options
      * @returns {Array} Top results
      */
-    getTopResults(members, requirements, limit = 5) {
-        const allResults = this.analyzeAllCombinations(members, requirements);
+    getTopResults(members, requirements, limit = 5, options = {}) {
+        const { considerJobChange = false, squadRank = 3 } = options;
+
+        let allResults = this.analyzeAllCombinations(members, requirements);
+
+        // If considering job changes, find additional solutions with job changes
+        if (considerJobChange) {
+            allResults = this.analyzeWithJobChanges(members, requirements, allResults, squadRank);
+        }
+
         return allResults.slice(0, limit);
+    },
+
+    /**
+     * Analyze combinations with potential job changes
+     * @param {Array} members - All members
+     * @param {Object} requirements - Required stats
+     * @param {Array} baseResults - Results without job changes
+     * @param {number} squadRank - Squad rank for stat calculation
+     * @returns {Array} Results including job change suggestions
+     */
+    analyzeWithJobChanges(members, requirements, baseResults, squadRank) {
+        const results = [...baseResults];
+        const jobKeys = Object.keys(GameData.jobs);
+
+        // For combinations that don't meet requirements and have no training solution,
+        // try to find job change suggestions
+        for (const result of results) {
+            if (result.meetsRequirements) continue;
+
+            // Find best job change suggestions for this combination
+            const jobChangeSuggestions = this.findBestJobChanges(
+                result.members,
+                requirements,
+                squadRank
+            );
+
+            if (jobChangeSuggestions) {
+                result.jobChanges = jobChangeSuggestions.changes;
+                result.statsAfterJobChange = jobChangeSuggestions.newStats;
+
+                // Update score if job change helps meet requirements
+                if (this.meetsRequirements(jobChangeSuggestions.newStats, requirements)) {
+                    // Job change can meet requirements
+                    result.score = 90 - jobChangeSuggestions.changes.length * 5;
+                }
+            }
+        }
+
+        // Re-sort by score
+        results.sort((a, b) => b.score - a.score);
+
+        return results;
+    },
+
+    /**
+     * Find best job changes for a group to meet requirements
+     * @param {Array} groupMembers - The 4 members in the group
+     * @param {Object} requirements - Required stats
+     * @param {number} squadRank - Squad rank
+     * @returns {Object|null} Job change suggestions
+     */
+    findBestJobChanges(groupMembers, requirements, squadRank) {
+        const jobKeys = Object.keys(GameData.jobs);
+        let bestSolution = null;
+        let bestScore = -Infinity;
+
+        // Try changing one member's job at a time (simpler approach)
+        for (let i = 0; i < groupMembers.length; i++) {
+            const member = groupMembers[i];
+
+            for (const newJob of jobKeys) {
+                if (newJob === member.job) continue;
+
+                // Calculate new stats for this member with new job
+                const newMemberStats = GameData.calculateStatsForLevel(newJob, member.level, squadRank);
+
+                // Create modified group
+                const modifiedMembers = groupMembers.map((m, idx) => {
+                    if (idx === i) {
+                        return { ...m, ...newMemberStats, job: newJob };
+                    }
+                    return m;
+                });
+
+                const newGroupStats = this.calculateGroupStats(modifiedMembers);
+
+                if (this.meetsRequirements(newGroupStats, requirements)) {
+                    const score = 100; // Met requirements with 1 job change
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestSolution = {
+                            changes: [{
+                                memberId: member.id,
+                                name: member.name,
+                                from: member.job,
+                                to: newJob
+                            }],
+                            newStats: newGroupStats
+                        };
+                    }
+                }
+            }
+        }
+
+        // If single job change doesn't work, try two job changes
+        if (!bestSolution) {
+            for (let i = 0; i < groupMembers.length - 1; i++) {
+                for (let j = i + 1; j < groupMembers.length; j++) {
+                    for (const newJob1 of jobKeys) {
+                        if (newJob1 === groupMembers[i].job) continue;
+
+                        for (const newJob2 of jobKeys) {
+                            if (newJob2 === groupMembers[j].job) continue;
+
+                            const newStats1 = GameData.calculateStatsForLevel(newJob1, groupMembers[i].level, squadRank);
+                            const newStats2 = GameData.calculateStatsForLevel(newJob2, groupMembers[j].level, squadRank);
+
+                            const modifiedMembers = groupMembers.map((m, idx) => {
+                                if (idx === i) return { ...m, ...newStats1, job: newJob1 };
+                                if (idx === j) return { ...m, ...newStats2, job: newJob2 };
+                                return m;
+                            });
+
+                            const newGroupStats = this.calculateGroupStats(modifiedMembers);
+
+                            if (this.meetsRequirements(newGroupStats, requirements)) {
+                                const score = 80; // Met requirements with 2 job changes
+                                if (score > bestScore) {
+                                    bestScore = score;
+                                    bestSolution = {
+                                        changes: [
+                                            {
+                                                memberId: groupMembers[i].id,
+                                                name: groupMembers[i].name,
+                                                from: groupMembers[i].job,
+                                                to: newJob1
+                                            },
+                                            {
+                                                memberId: groupMembers[j].id,
+                                                name: groupMembers[j].name,
+                                                from: groupMembers[j].job,
+                                                to: newJob2
+                                            }
+                                        ],
+                                        newStats: newGroupStats
+                                    };
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return bestSolution;
     },
 
     /**

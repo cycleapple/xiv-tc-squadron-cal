@@ -989,6 +989,88 @@ body {
 .stat-input-item:nth-child(2) input { color: var(--stat-mental); }
 .stat-input-item:nth-child(3) input { color: var(--stat-tactical); }
 
+/* ==================== Calculation Options ==================== */
+.calc-options {
+    margin: 15px 0;
+    padding: 10px 12px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius);
+    border: 1px solid var(--border-color);
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.checkbox-label span {
+    color: var(--text-secondary);
+}
+
+/* Job Select in Modal */
+#jobSelectGroup select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+/* Job Changed Indicator */
+.job-changed-indicator {
+    color: var(--warning);
+    font-weight: bold;
+    margin-left: 2px;
+}
+
+/* Result Job Changes */
+.result-job-changes {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color);
+}
+
+.result-job-changes h4 {
+    font-size: 0.85rem;
+    color: var(--warning);
+    margin-bottom: 8px;
+}
+
+.job-change-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 8px;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    margin-bottom: 4px;
+    font-size: 0.85rem;
+}
+
+.job-change-item .member-name {
+    color: var(--text-primary);
+}
+
+.job-change-item .job-arrow {
+    color: var(--warning);
+}
+
+.result-member.job-changed {
+    border: 1px dashed var(--warning);
+}
+
 /* ==================== Footer ==================== */
 .app-footer {
     text-align: center;

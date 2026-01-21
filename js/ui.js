@@ -152,13 +152,16 @@ const UI = {
             filterJob: document.getElementById('filterJob'),
             recruitSelect: document.getElementById('recruitSelect'),
             recruitInfo: document.getElementById('recruitInfo'),
-            recruitJob: document.getElementById('recruitJob'),
+            recruitOriginalJob: document.getElementById('recruitOriginalJob'),
             recruitRace: document.getElementById('recruitRace'),
+            jobSelectGroup: document.getElementById('jobSelectGroup'),
+            memberJob: document.getElementById('memberJob'),
             memberLevel: document.getElementById('memberLevel'),
             memberPhysical: document.getElementById('memberPhysical'),
             memberMental: document.getElementById('memberMental'),
             memberTactical: document.getElementById('memberTactical'),
             autoFillStats: document.getElementById('autoFillStats'),
+            considerJobChange: document.getElementById('considerJobChange'),
 
             // Import/Export modal
             importExportModal: document.getElementById('importExportModal'),
@@ -215,6 +218,16 @@ const UI = {
         // Auto fill stats button
         if (this.elements.autoFillStats) {
             this.elements.autoFillStats.addEventListener('click', () => this.autoFillBaseStats());
+        }
+
+        // Job change in modal
+        if (this.elements.memberJob) {
+            this.elements.memberJob.addEventListener('change', () => {
+                // Optionally auto-fill stats when job changes (only if adding new member)
+                if (!this.editingMemberId) {
+                    this.autoFillBaseStats();
+                }
+            });
         }
 
         // Modal close buttons
@@ -293,9 +306,12 @@ const UI = {
         const raceFilter = this.elements.filterRace?.value || '';
         const jobFilter = this.elements.filterJob?.value || '';
         this.populateRecruitDropdown(raceFilter, jobFilter);
-        // Reset recruit info
+        // Reset recruit info and job select
         if (this.elements.recruitInfo) {
             this.elements.recruitInfo.style.display = 'none';
+        }
+        if (this.elements.jobSelectGroup) {
+            this.elements.jobSelectGroup.style.display = 'none';
         }
         this.clearStatsInputs();
     },
@@ -309,6 +325,9 @@ const UI = {
             if (this.elements.recruitInfo) {
                 this.elements.recruitInfo.style.display = 'none';
             }
+            if (this.elements.jobSelectGroup) {
+                this.elements.jobSelectGroup.style.display = 'none';
+            }
             this.clearStatsInputs();
             return;
         }
@@ -316,19 +335,27 @@ const UI = {
         const recruit = GameData.getRecruit(recruitId);
         if (!recruit) return;
 
-        // Show recruit info
+        // Show recruit info and job selector
         if (this.elements.recruitInfo) {
             this.elements.recruitInfo.style.display = 'block';
+        }
+        if (this.elements.jobSelectGroup) {
+            this.elements.jobSelectGroup.style.display = 'block';
         }
 
         const job = GameData.getJob(recruit.job);
         const race = GameData.races[recruit.race];
 
-        if (this.elements.recruitJob) {
-            this.elements.recruitJob.textContent = job ? job.name : recruit.job;
+        if (this.elements.recruitOriginalJob) {
+            this.elements.recruitOriginalJob.textContent = job ? job.name : recruit.job;
         }
         if (this.elements.recruitRace) {
             this.elements.recruitRace.textContent = race ? race.name : recruit.race;
+        }
+
+        // Set job dropdown to recruit's original job (only in add mode)
+        if (!this.editingMemberId && this.elements.memberJob) {
+            this.elements.memberJob.value = recruit.job;
         }
 
         // Auto-fill base stats when selecting a new recruit (only in add mode)
@@ -338,18 +365,18 @@ const UI = {
     },
 
     /**
-     * Auto fill base stats based on selected recruit and level
+     * Auto fill base stats based on selected job and level
      */
     autoFillBaseStats() {
-        const recruitId = parseInt(this.elements.recruitSelect?.value);
+        const jobKey = this.elements.memberJob?.value;
         const level = parseInt(this.elements.memberLevel?.value) || 60;
 
-        if (!recruitId) {
-            alert('請先選擇隊員');
+        if (!jobKey) {
+            alert('請先選擇職業');
             return;
         }
 
-        const stats = GameData.getRecruitStats(recruitId, level, this.squadRank);
+        const stats = GameData.calculateStatsForLevel(jobKey, level, this.squadRank);
         if (!stats) return;
 
         if (this.elements.memberPhysical) {
@@ -414,12 +441,16 @@ const UI = {
                 }
             }
 
+            // Check if job was changed from original
+            const hasJobChanged = member.originalJob && member.originalJob !== member.job;
+            const jobChangedIndicator = hasJobChanged ? '<span class="job-changed-indicator" title="已轉職">*</span>' : '';
+
             return `
                 <div class="member-card ${isSelected ? 'selected' : ''}" data-id="${member.id}">
                     <div class="job-icon ${roleClass}">${job ? job.abbr : '?'}</div>
                     <div class="member-info">
                         <div class="name">${this.escapeHtml(displayName)}</div>
-                        <div class="job-level">${job ? job.name : '未知'} Lv.${member.level}</div>
+                        <div class="job-level">${job ? job.name : '未知'}${jobChangedIndicator} Lv.${member.level}</div>
                     </div>
                     <div class="member-stats">
                         <span class="stat-badge physical">${member.physical}</span>
@@ -501,21 +532,29 @@ const UI = {
 
             if (member.recruitId && this.elements.recruitSelect) {
                 this.elements.recruitSelect.value = member.recruitId;
-                // Show recruit info without auto-filling stats
+                // Show recruit info and job selector
                 const recruit = GameData.getRecruit(member.recruitId);
                 if (recruit) {
                     if (this.elements.recruitInfo) {
                         this.elements.recruitInfo.style.display = 'block';
                     }
-                    const job = GameData.getJob(recruit.job);
+                    if (this.elements.jobSelectGroup) {
+                        this.elements.jobSelectGroup.style.display = 'block';
+                    }
+                    const originalJob = GameData.getJob(recruit.job);
                     const race = GameData.races[recruit.race];
-                    if (this.elements.recruitJob) {
-                        this.elements.recruitJob.textContent = job ? job.name : recruit.job;
+                    if (this.elements.recruitOriginalJob) {
+                        this.elements.recruitOriginalJob.textContent = originalJob ? originalJob.name : recruit.job;
                     }
                     if (this.elements.recruitRace) {
                         this.elements.recruitRace.textContent = race ? race.name : recruit.race;
                     }
                 }
+            }
+
+            // Set current job (may differ from original if job changed)
+            if (this.elements.memberJob) {
+                this.elements.memberJob.value = member.job;
             }
 
             if (this.elements.memberLevel) {
@@ -551,6 +590,9 @@ const UI = {
             if (this.elements.recruitInfo) {
                 this.elements.recruitInfo.style.display = 'none';
             }
+            if (this.elements.jobSelectGroup) {
+                this.elements.jobSelectGroup.style.display = 'none';
+            }
             this.clearStatsInputs();
 
             // Update submit button text
@@ -581,6 +623,7 @@ const UI = {
             return;
         }
 
+        const selectedJob = this.elements.memberJob?.value || recruit.job;
         const level = parseInt(this.elements.memberLevel?.value) || 60;
 
         // Use manually entered stats (user can edit after training)
@@ -591,7 +634,8 @@ const UI = {
         const memberData = {
             recruitId: recruitId,
             name: recruit.name,
-            job: recruit.job,
+            originalJob: recruit.job,  // Keep track of original job
+            job: selectedJob,          // Current job (may be different if changed)
             race: recruit.race,
             level: level,
             physical: physical,
@@ -685,20 +729,25 @@ const UI = {
             return;
         }
 
+        const considerJobChange = this.elements.considerJobChange?.checked || false;
+
         // Show loading
         this.elements.resultsContainer.innerHTML = '<div class="loading"></div>';
 
         // Calculate in next tick to allow UI update
         setTimeout(() => {
-            const results = Calculator.getTopResults(this.members, requirements, 5);
-            this.renderResults(results, requirements);
+            const results = Calculator.getTopResults(this.members, requirements, 5, {
+                considerJobChange: considerJobChange,
+                squadRank: this.squadRank
+            });
+            this.renderResults(results, requirements, considerJobChange);
         }, 50);
     },
 
     /**
      * Render calculation results
      */
-    renderResults(results, requirements) {
+    renderResults(results, requirements, considerJobChange = false) {
         if (results.length === 0) {
             this.elements.resultsContainer.innerHTML = `
                 <p class="placeholder-text">沒有可用的組合</p>
@@ -717,6 +766,26 @@ const UI = {
                 statusBadge = `<span class="result-badge needs-training">需 ${result.trainingSolution.trainings.length} 次訓練</span>`;
             } else {
                 statusBadge = '<span class="result-badge" style="background:rgba(231,76,60,0.2);color:#e74c3c">無法達成</span>';
+            }
+
+            // Job change suggestions
+            let jobChangeHtml = '';
+            if (result.jobChanges && result.jobChanges.length > 0) {
+                jobChangeHtml = `
+                    <div class="result-job-changes">
+                        <h4>建議轉職</h4>
+                        ${result.jobChanges.map(jc => {
+                            const fromJob = GameData.getJob(jc.from);
+                            const toJob = GameData.getJob(jc.to);
+                            return `
+                                <div class="job-change-item">
+                                    <span class="member-name">${this.escapeHtml(jc.name)}</span>
+                                    <span class="job-arrow">${fromJob?.name || jc.from} → ${toJob?.name || jc.to}</span>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
             }
 
             const trainingHtml = result.trainingSolution && result.trainingSolution.trainings.length > 0 ? `
@@ -743,6 +812,9 @@ const UI = {
                     <div class="result-members">
                         ${result.members.map(m => {
                             const job = GameData.getJob(m.job);
+                            // Check if job changed in this result
+                            const suggestedJob = result.jobChanges?.find(jc => jc.memberId === m.id);
+                            const displayJob = suggestedJob ? GameData.getJob(suggestedJob.to) : job;
                             // Get recruit name if available
                             let displayName = m.name;
                             if (m.recruitId) {
@@ -751,7 +823,8 @@ const UI = {
                                     displayName = recruit.name;
                                 }
                             }
-                            return `<span class="result-member">${this.escapeHtml(displayName)} (${job ? job.name : '?'})</span>`;
+                            const jobChangedClass = suggestedJob ? 'job-changed' : '';
+                            return `<span class="result-member ${jobChangedClass}">${this.escapeHtml(displayName)} (${displayJob ? displayJob.name : '?'})</span>`;
                         }).join('')}
                     </div>
                     <div class="result-stats">
@@ -777,6 +850,7 @@ const UI = {
                             </span>
                         </div>
                     </div>
+                    ${jobChangeHtml}
                     ${trainingHtml}
                 </div>
             `;

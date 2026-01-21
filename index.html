@@ -139,6 +139,13 @@
                         </select>
                     </div>
 
+                    <div class="calc-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="considerJobChange">
+                            <span>考慮轉職（計算不同職業組合）</span>
+                        </label>
+                    </div>
+
                     <button id="calculateBtn" class="btn btn-primary btn-large">計算最佳組合</button>
                 </div>
 
@@ -231,13 +238,28 @@
                     <!-- Selected Recruit Info -->
                     <div id="recruitInfo" class="recruit-info" style="display: none;">
                         <div class="recruit-detail">
-                            <span class="label">職業：</span>
-                            <span id="recruitJob">-</span>
-                        </div>
-                        <div class="recruit-detail">
                             <span class="label">種族：</span>
                             <span id="recruitRace">-</span>
                         </div>
+                        <div class="recruit-detail">
+                            <span class="label">原職業：</span>
+                            <span id="recruitOriginalJob">-</span>
+                        </div>
+                    </div>
+                    <!-- Job Selection -->
+                    <div class="form-group" id="jobSelectGroup" style="display: none;">
+                        <label for="memberJob">現職業（可轉職）</label>
+                        <select id="memberJob">
+                            <option value="gladiator">劍術士</option>
+                            <option value="marauder">斧術士</option>
+                            <option value="lancer">槍術士</option>
+                            <option value="pugilist">格鬥士</option>
+                            <option value="archer">弓術士</option>
+                            <option value="rogue">雙劍士</option>
+                            <option value="conjurer">幻術士</option>
+                            <option value="thaumaturge">咒術士</option>
+                            <option value="arcanist">巴術士</option>
+                        </select>
                     </div>
                     <!-- Level Input -->
                     <div class="form-group">
