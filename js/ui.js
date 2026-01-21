@@ -144,7 +144,7 @@ const UI = {
             reqTactical: document.getElementById('reqTactical'),
             presetMissions: document.getElementById('presetMissions'),
 
-            // Member modal - new recruit selection
+            // Member modal - recruit selection with editable stats
             memberModal: document.getElementById('memberModal'),
             modalTitle: document.getElementById('modalTitle'),
             memberForm: document.getElementById('memberForm'),
@@ -155,9 +155,10 @@ const UI = {
             recruitJob: document.getElementById('recruitJob'),
             recruitRace: document.getElementById('recruitRace'),
             memberLevel: document.getElementById('memberLevel'),
-            previewPhysical: document.getElementById('previewPhysical'),
-            previewMental: document.getElementById('previewMental'),
-            previewTactical: document.getElementById('previewTactical'),
+            memberPhysical: document.getElementById('memberPhysical'),
+            memberMental: document.getElementById('memberMental'),
+            memberTactical: document.getElementById('memberTactical'),
+            autoFillStats: document.getElementById('autoFillStats'),
 
             // Import/Export modal
             importExportModal: document.getElementById('importExportModal'),
@@ -211,10 +212,9 @@ const UI = {
             this.elements.recruitSelect.addEventListener('change', () => this.onRecruitChange());
         }
 
-        // Level change updates preview
-        if (this.elements.memberLevel) {
-            this.elements.memberLevel.addEventListener('change', () => this.updateStatsPreview());
-            this.elements.memberLevel.addEventListener('input', () => this.updateStatsPreview());
+        // Auto fill stats button
+        if (this.elements.autoFillStats) {
+            this.elements.autoFillStats.addEventListener('click', () => this.autoFillBaseStats());
         }
 
         // Modal close buttons
@@ -282,25 +282,8 @@ const UI = {
     onSquadRankChange(value) {
         this.squadRank = parseInt(value) || 3;
         this.saveSettings();
-        // Recalculate all member stats based on new rank
-        this.recalculateMemberStats();
-        this.render();
-    },
-
-    /**
-     * Recalculate all member stats based on current rank
-     */
-    recalculateMemberStats() {
-        this.members = this.members.map(member => {
-            if (member.recruitId) {
-                const stats = GameData.getRecruitStats(member.recruitId, member.level, this.squadRank);
-                if (stats) {
-                    return { ...member, ...stats };
-                }
-            }
-            return member;
-        });
-        this.saveMembers();
+        // Note: We don't auto-recalculate stats because users input their actual stats
+        // The rank is saved for reference when using "填入基礎值" button
     },
 
     /**
@@ -314,7 +297,7 @@ const UI = {
         if (this.elements.recruitInfo) {
             this.elements.recruitInfo.style.display = 'none';
         }
-        this.clearStatsPreview();
+        this.clearStatsInputs();
     },
 
     /**
@@ -326,7 +309,7 @@ const UI = {
             if (this.elements.recruitInfo) {
                 this.elements.recruitInfo.style.display = 'none';
             }
-            this.clearStatsPreview();
+            this.clearStatsInputs();
             return;
         }
 
@@ -348,50 +331,50 @@ const UI = {
             this.elements.recruitRace.textContent = race ? race.name : recruit.race;
         }
 
-        this.updateStatsPreview();
+        // Auto-fill base stats when selecting a new recruit (only in add mode)
+        if (!this.editingMemberId) {
+            this.autoFillBaseStats();
+        }
     },
 
     /**
-     * Update stats preview based on selected recruit and level
+     * Auto fill base stats based on selected recruit and level
      */
-    updateStatsPreview() {
+    autoFillBaseStats() {
         const recruitId = parseInt(this.elements.recruitSelect?.value);
         const level = parseInt(this.elements.memberLevel?.value) || 60;
 
         if (!recruitId) {
-            this.clearStatsPreview();
+            alert('請先選擇隊員');
             return;
         }
 
         const stats = GameData.getRecruitStats(recruitId, level, this.squadRank);
-        if (!stats) {
-            this.clearStatsPreview();
-            return;
-        }
+        if (!stats) return;
 
-        if (this.elements.previewPhysical) {
-            this.elements.previewPhysical.textContent = stats.physical;
+        if (this.elements.memberPhysical) {
+            this.elements.memberPhysical.value = stats.physical;
         }
-        if (this.elements.previewMental) {
-            this.elements.previewMental.textContent = stats.mental;
+        if (this.elements.memberMental) {
+            this.elements.memberMental.value = stats.mental;
         }
-        if (this.elements.previewTactical) {
-            this.elements.previewTactical.textContent = stats.tactical;
+        if (this.elements.memberTactical) {
+            this.elements.memberTactical.value = stats.tactical;
         }
     },
 
     /**
-     * Clear stats preview
+     * Clear stats inputs
      */
-    clearStatsPreview() {
-        if (this.elements.previewPhysical) {
-            this.elements.previewPhysical.textContent = '-';
+    clearStatsInputs() {
+        if (this.elements.memberPhysical) {
+            this.elements.memberPhysical.value = 0;
         }
-        if (this.elements.previewMental) {
-            this.elements.previewMental.textContent = '-';
+        if (this.elements.memberMental) {
+            this.elements.memberMental.value = 0;
         }
-        if (this.elements.previewTactical) {
-            this.elements.previewTactical.textContent = '-';
+        if (this.elements.memberTactical) {
+            this.elements.memberTactical.value = 0;
         }
     },
 
@@ -518,11 +501,36 @@ const UI = {
 
             if (member.recruitId && this.elements.recruitSelect) {
                 this.elements.recruitSelect.value = member.recruitId;
-                this.onRecruitChange();
+                // Show recruit info without auto-filling stats
+                const recruit = GameData.getRecruit(member.recruitId);
+                if (recruit) {
+                    if (this.elements.recruitInfo) {
+                        this.elements.recruitInfo.style.display = 'block';
+                    }
+                    const job = GameData.getJob(recruit.job);
+                    const race = GameData.races[recruit.race];
+                    if (this.elements.recruitJob) {
+                        this.elements.recruitJob.textContent = job ? job.name : recruit.job;
+                    }
+                    if (this.elements.recruitRace) {
+                        this.elements.recruitRace.textContent = race ? race.name : recruit.race;
+                    }
+                }
             }
 
             if (this.elements.memberLevel) {
                 this.elements.memberLevel.value = member.level;
+            }
+
+            // Populate current stats
+            if (this.elements.memberPhysical) {
+                this.elements.memberPhysical.value = member.physical || 0;
+            }
+            if (this.elements.memberMental) {
+                this.elements.memberMental.value = member.mental || 0;
+            }
+            if (this.elements.memberTactical) {
+                this.elements.memberTactical.value = member.tactical || 0;
             }
 
             // Update submit button text
@@ -543,7 +551,7 @@ const UI = {
             if (this.elements.recruitInfo) {
                 this.elements.recruitInfo.style.display = 'none';
             }
-            this.clearStatsPreview();
+            this.clearStatsInputs();
 
             // Update submit button text
             const submitBtn = this.elements.memberForm.querySelector('button[type="submit"]');
@@ -574,7 +582,11 @@ const UI = {
         }
 
         const level = parseInt(this.elements.memberLevel?.value) || 60;
-        const stats = GameData.getRecruitStats(recruitId, level, this.squadRank);
+
+        // Use manually entered stats (user can edit after training)
+        const physical = parseInt(this.elements.memberPhysical?.value) || 0;
+        const mental = parseInt(this.elements.memberMental?.value) || 0;
+        const tactical = parseInt(this.elements.memberTactical?.value) || 0;
 
         const memberData = {
             recruitId: recruitId,
@@ -582,9 +594,9 @@ const UI = {
             job: recruit.job,
             race: recruit.race,
             level: level,
-            physical: stats.physical,
-            mental: stats.mental,
-            tactical: stats.tactical
+            physical: physical,
+            mental: mental,
+            tactical: tactical
         };
 
         if (this.editingMemberId) {
