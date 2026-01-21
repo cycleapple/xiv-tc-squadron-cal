@@ -1224,6 +1224,12 @@ body {
     color: var(--accent-hover);
 }
 
+.app-footer .license-note {
+    font-size: 0.7rem;
+    margin-top: 5px;
+    opacity: 0.8;
+}
+
 /* ==================== Scrollbar ==================== */
 ::-webkit-scrollbar {
     width: 6px;
