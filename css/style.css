@@ -856,6 +856,116 @@ body {
     border-top: 1px solid var(--border-color);
 }
 
+/* ==================== Squad Rank Setting ==================== */
+.squad-rank-setting {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius);
+    margin-bottom: 15px;
+    border: 1px solid var(--border-color);
+}
+
+.squad-rank-setting label {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.squad-rank-setting select {
+    flex: 1;
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+}
+
+/* ==================== Recruit Filters ==================== */
+.recruit-filters {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.filter-group label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.filter-group select {
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+}
+
+/* ==================== Recruit Info ==================== */
+.recruit-info {
+    background: var(--bg-tertiary);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.recruit-detail {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 0.85rem;
+}
+
+.recruit-detail .label {
+    color: var(--text-muted);
+}
+
+/* ==================== Stats Preview ==================== */
+.stats-preview .stats-display {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.stats-preview .stat-item {
+    background: var(--bg-tertiary);
+    border-radius: var(--radius);
+    padding: 10px;
+    text-align: center;
+    border: 1px solid var(--border-color);
+}
+
+.stats-preview .stat-label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin: 4px 0;
+}
+
+.stats-preview .stat-value {
+    display: block;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.stats-preview .stat-value.physical { color: var(--stat-physical); }
+.stats-preview .stat-value.mental { color: var(--stat-mental); }
+.stats-preview .stat-value.tactical { color: var(--stat-tactical); }
+
 /* ==================== Footer ==================== */
 .app-footer {
     text-align: center;

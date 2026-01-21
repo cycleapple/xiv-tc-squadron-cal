@@ -74,6 +74,15 @@
                     <h2>隊員管理</h2>
                     <button id="addMemberBtn" class="btn btn-primary">+ 新增隊員</button>
                 </div>
+                <!-- Squad Rank Setting -->
+                <div class="squad-rank-setting">
+                    <label for="squadRank">小隊階級：</label>
+                    <select id="squadRank">
+                        <option value="1">一級 (上限 200)</option>
+                        <option value="2">二級 (上限 300)</option>
+                        <option value="3" selected>三級 (上限 400)</option>
+                    </select>
+                </div>
                 <div id="memberList" class="member-list">
                     <!-- Member cards will be generated here -->
                 </div>
@@ -181,61 +190,84 @@
                     <button class="modal-close">&times;</button>
                 </div>
                 <form id="memberForm">
-                    <div class="form-group">
-                        <label for="memberName">名稱</label>
-                        <input type="text" id="memberName" required placeholder="輸入隊員名稱">
+                    <!-- Recruit Filter -->
+                    <div class="recruit-filters">
+                        <div class="filter-group">
+                            <label>篩選種族：</label>
+                            <select id="filterRace">
+                                <option value="">全部種族</option>
+                                <option value="hyur">人族</option>
+                                <option value="elezen">精靈族</option>
+                                <option value="lalafell">拉拉菲爾族</option>
+                                <option value="miqote">貓魅族</option>
+                                <option value="roegadyn">魯加族</option>
+                                <option value="aura">敖龍族</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>篩選職業：</label>
+                            <select id="filterJob">
+                                <option value="">全部職業</option>
+                                <option value="gladiator">劍術士</option>
+                                <option value="marauder">斧術士</option>
+                                <option value="lancer">槍術士</option>
+                                <option value="pugilist">格鬥士</option>
+                                <option value="archer">弓術士</option>
+                                <option value="rogue">雙劍士</option>
+                                <option value="conjurer">幻術士</option>
+                                <option value="thaumaturge">咒術士</option>
+                                <option value="arcanist">巴術士</option>
+                            </select>
+                        </div>
                     </div>
+                    <!-- Recruit Selector -->
                     <div class="form-group">
-                        <label for="memberJob">職業</label>
-                        <select id="memberJob" required>
-                            <option value="">-- 選擇職業 --</option>
-                            <option value="gladiator">劍術士 Gladiator</option>
-                            <option value="marauder">斧術士 Marauder</option>
-                            <option value="lancer">槍術士 Lancer</option>
-                            <option value="pugilist">格鬥士 Pugilist</option>
-                            <option value="archer">弓術士 Archer</option>
-                            <option value="rogue">雙劍士 Rogue</option>
-                            <option value="conjurer">幻術士 Conjurer</option>
-                            <option value="thaumaturge">咒術士 Thaumaturge</option>
-                            <option value="arcanist">巴術士 Arcanist</option>
+                        <label for="recruitSelect">選擇隊員</label>
+                        <select id="recruitSelect" required>
+                            <option value="">-- 選擇隊員 --</option>
+                            <!-- Options will be populated by JS -->
                         </select>
                     </div>
+                    <!-- Selected Recruit Info -->
+                    <div id="recruitInfo" class="recruit-info" style="display: none;">
+                        <div class="recruit-detail">
+                            <span class="label">職業：</span>
+                            <span id="recruitJob">-</span>
+                        </div>
+                        <div class="recruit-detail">
+                            <span class="label">種族：</span>
+                            <span id="recruitRace">-</span>
+                        </div>
+                    </div>
+                    <!-- Level Input -->
                     <div class="form-group">
                         <label for="memberLevel">等級</label>
                         <input type="number" id="memberLevel" min="1" max="60" value="60">
                     </div>
-                    <div class="form-group">
-                        <label for="memberRace">種族</label>
-                        <select id="memberRace">
-                            <option value="hyur">人族 Hyur</option>
-                            <option value="elezen">精靈族 Elezen</option>
-                            <option value="lalafell">拉拉菲爾族 Lalafell</option>
-                            <option value="miqote">貓魅族 Miqo'te</option>
-                            <option value="roegadyn">魯加族 Roegadyn</option>
-                            <option value="aura">敖龍族 Au Ra</option>
-                        </select>
-                    </div>
-                    <div class="form-group stats-group">
-                        <label>能力值</label>
-                        <div class="stats-inputs">
-                            <div class="stat-input">
+                    <!-- Stats Preview -->
+                    <div class="form-group stats-preview">
+                        <label>能力值預覽</label>
+                        <div class="stats-display">
+                            <div class="stat-item">
                                 <span class="stat-icon physical"></span>
-                                <input type="number" id="memberPhysical" min="0" max="200" placeholder="體能">
+                                <span class="stat-label">體能</span>
+                                <span id="previewPhysical" class="stat-value physical">-</span>
                             </div>
-                            <div class="stat-input">
+                            <div class="stat-item">
                                 <span class="stat-icon mental"></span>
-                                <input type="number" id="memberMental" min="0" max="200" placeholder="心智">
+                                <span class="stat-label">心智</span>
+                                <span id="previewMental" class="stat-value mental">-</span>
                             </div>
-                            <div class="stat-input">
+                            <div class="stat-item">
                                 <span class="stat-icon tactical"></span>
-                                <input type="number" id="memberTactical" min="0" max="200" placeholder="戰術">
+                                <span class="stat-label">戰術</span>
+                                <span id="previewTactical" class="stat-value tactical">-</span>
                             </div>
                         </div>
-                        <button type="button" id="autoFillStats" class="btn btn-secondary btn-small">自動填入 Lv60 預設值</button>
                     </div>
                     <div class="form-actions">
                         <button type="button" class="btn btn-secondary modal-cancel">取消</button>
-                        <button type="submit" class="btn btn-primary">儲存</button>
+                        <button type="submit" class="btn btn-primary">新增</button>
                     </div>
                 </form>
             </div>

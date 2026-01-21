@@ -8,6 +8,8 @@ const UI = {
     members: [],
     selectedMemberIds: [],
     editingMemberId: null,
+    squadRank: 3,
+    selectedTrainingType: null,
 
     // DOM element references
     elements: {},
@@ -19,7 +21,9 @@ const UI = {
         this.cacheElements();
         this.bindEvents();
         this.loadMembers();
+        this.loadSettings();
         this.populateMissionSelector();
+        this.populateRecruitDropdown();
         this.render();
     },
 
@@ -71,6 +75,57 @@ const UI = {
     },
 
     /**
+     * Populate recruit dropdown
+     */
+    populateRecruitDropdown(raceFilter = '', jobFilter = '') {
+        const select = this.elements.recruitSelect;
+        if (!select) return;
+
+        // Get existing members' recruit IDs to exclude
+        const existingRecruitIds = this.members
+            .filter(m => m.id !== this.editingMemberId)
+            .map(m => m.recruitId);
+
+        select.innerHTML = '<option value="">-- 選擇隊員 --</option>';
+
+        // Filter recruits
+        let recruits = GameData.getAllRecruits();
+        if (raceFilter) {
+            recruits = recruits.filter(r => r.race === raceFilter);
+        }
+        if (jobFilter) {
+            recruits = recruits.filter(r => r.job === jobFilter);
+        }
+
+        // Exclude already added recruits (unless editing that same recruit)
+        recruits = recruits.filter(r => !existingRecruitIds.includes(r.id));
+
+        // Group by race
+        const raceGroups = {};
+        recruits.forEach(recruit => {
+            const raceName = GameData.races[recruit.race]?.name || recruit.race;
+            if (!raceGroups[raceName]) {
+                raceGroups[raceName] = [];
+            }
+            raceGroups[raceName].push(recruit);
+        });
+
+        // Create optgroups
+        Object.entries(raceGroups).forEach(([raceName, raceRecruits]) => {
+            const group = document.createElement('optgroup');
+            group.label = raceName;
+            raceRecruits.forEach(recruit => {
+                const job = GameData.getJob(recruit.job);
+                const opt = document.createElement('option');
+                opt.value = recruit.id;
+                opt.textContent = `${recruit.name} (${job ? job.name : recruit.job})`;
+                group.appendChild(opt);
+            });
+            select.appendChild(group);
+        });
+    },
+
+    /**
      * Cache DOM elements
      */
     cacheElements() {
@@ -81,6 +136,7 @@ const UI = {
             exportBtn: document.getElementById('exportBtn'),
             calculateBtn: document.getElementById('calculateBtn'),
             resultsContainer: document.getElementById('resultsContainer'),
+            squadRank: document.getElementById('squadRank'),
 
             // Mission requirements
             reqPhysical: document.getElementById('reqPhysical'),
@@ -88,18 +144,20 @@ const UI = {
             reqTactical: document.getElementById('reqTactical'),
             presetMissions: document.getElementById('presetMissions'),
 
-            // Member modal
+            // Member modal - new recruit selection
             memberModal: document.getElementById('memberModal'),
             modalTitle: document.getElementById('modalTitle'),
             memberForm: document.getElementById('memberForm'),
-            memberName: document.getElementById('memberName'),
-            memberJob: document.getElementById('memberJob'),
+            filterRace: document.getElementById('filterRace'),
+            filterJob: document.getElementById('filterJob'),
+            recruitSelect: document.getElementById('recruitSelect'),
+            recruitInfo: document.getElementById('recruitInfo'),
+            recruitJob: document.getElementById('recruitJob'),
+            recruitRace: document.getElementById('recruitRace'),
             memberLevel: document.getElementById('memberLevel'),
-            memberRace: document.getElementById('memberRace'),
-            memberPhysical: document.getElementById('memberPhysical'),
-            memberMental: document.getElementById('memberMental'),
-            memberTactical: document.getElementById('memberTactical'),
-            autoFillStats: document.getElementById('autoFillStats'),
+            previewPhysical: document.getElementById('previewPhysical'),
+            previewMental: document.getElementById('previewMental'),
+            previewTactical: document.getElementById('previewTactical'),
 
             // Import/Export modal
             importExportModal: document.getElementById('importExportModal'),
@@ -129,17 +187,35 @@ const UI = {
         this.elements.importBtn.addEventListener('click', () => this.openImportModal());
         this.elements.exportBtn.addEventListener('click', () => this.exportData());
 
+        // Squad rank change
+        if (this.elements.squadRank) {
+            this.elements.squadRank.addEventListener('change', (e) => this.onSquadRankChange(e.target.value));
+        }
+
         // Preset missions
         this.elements.presetMissions.addEventListener('change', (e) => this.loadPresetMission(e.target.value));
 
         // Member form
         this.elements.memberForm.addEventListener('submit', (e) => this.saveMember(e));
 
-        // Auto fill stats
-        this.elements.autoFillStats.addEventListener('click', () => this.autoFillJobStats());
+        // Recruit filters
+        if (this.elements.filterRace) {
+            this.elements.filterRace.addEventListener('change', () => this.onFilterChange());
+        }
+        if (this.elements.filterJob) {
+            this.elements.filterJob.addEventListener('change', () => this.onFilterChange());
+        }
 
-        // Job change updates auto fill hint
-        this.elements.memberJob.addEventListener('change', () => this.updateAutoFillHint());
+        // Recruit selection change
+        if (this.elements.recruitSelect) {
+            this.elements.recruitSelect.addEventListener('change', () => this.onRecruitChange());
+        }
+
+        // Level change updates preview
+        if (this.elements.memberLevel) {
+            this.elements.memberLevel.addEventListener('change', () => this.updateStatsPreview());
+            this.elements.memberLevel.addEventListener('input', () => this.updateStatsPreview());
+        }
 
         // Modal close buttons
         document.querySelectorAll('.modal-close, .modal-cancel').forEach(btn => {
@@ -176,10 +252,147 @@ const UI = {
     },
 
     /**
+     * Load settings from storage
+     */
+    loadSettings() {
+        const settings = Storage.loadSettings();
+        this.squadRank = settings.squadRank || 3;
+        if (this.elements.squadRank) {
+            this.elements.squadRank.value = this.squadRank;
+        }
+    },
+
+    /**
      * Save members to storage
      */
     saveMembers() {
         Storage.saveMembers(this.members);
+    },
+
+    /**
+     * Save settings to storage
+     */
+    saveSettings() {
+        Storage.saveSettings({ squadRank: this.squadRank });
+    },
+
+    /**
+     * Handle squad rank change
+     */
+    onSquadRankChange(value) {
+        this.squadRank = parseInt(value) || 3;
+        this.saveSettings();
+        // Recalculate all member stats based on new rank
+        this.recalculateMemberStats();
+        this.render();
+    },
+
+    /**
+     * Recalculate all member stats based on current rank
+     */
+    recalculateMemberStats() {
+        this.members = this.members.map(member => {
+            if (member.recruitId) {
+                const stats = GameData.getRecruitStats(member.recruitId, member.level, this.squadRank);
+                if (stats) {
+                    return { ...member, ...stats };
+                }
+            }
+            return member;
+        });
+        this.saveMembers();
+    },
+
+    /**
+     * Handle filter change
+     */
+    onFilterChange() {
+        const raceFilter = this.elements.filterRace?.value || '';
+        const jobFilter = this.elements.filterJob?.value || '';
+        this.populateRecruitDropdown(raceFilter, jobFilter);
+        // Reset recruit info
+        if (this.elements.recruitInfo) {
+            this.elements.recruitInfo.style.display = 'none';
+        }
+        this.clearStatsPreview();
+    },
+
+    /**
+     * Handle recruit selection change
+     */
+    onRecruitChange() {
+        const recruitId = parseInt(this.elements.recruitSelect?.value);
+        if (!recruitId) {
+            if (this.elements.recruitInfo) {
+                this.elements.recruitInfo.style.display = 'none';
+            }
+            this.clearStatsPreview();
+            return;
+        }
+
+        const recruit = GameData.getRecruit(recruitId);
+        if (!recruit) return;
+
+        // Show recruit info
+        if (this.elements.recruitInfo) {
+            this.elements.recruitInfo.style.display = 'block';
+        }
+
+        const job = GameData.getJob(recruit.job);
+        const race = GameData.races[recruit.race];
+
+        if (this.elements.recruitJob) {
+            this.elements.recruitJob.textContent = job ? job.name : recruit.job;
+        }
+        if (this.elements.recruitRace) {
+            this.elements.recruitRace.textContent = race ? race.name : recruit.race;
+        }
+
+        this.updateStatsPreview();
+    },
+
+    /**
+     * Update stats preview based on selected recruit and level
+     */
+    updateStatsPreview() {
+        const recruitId = parseInt(this.elements.recruitSelect?.value);
+        const level = parseInt(this.elements.memberLevel?.value) || 60;
+
+        if (!recruitId) {
+            this.clearStatsPreview();
+            return;
+        }
+
+        const stats = GameData.getRecruitStats(recruitId, level, this.squadRank);
+        if (!stats) {
+            this.clearStatsPreview();
+            return;
+        }
+
+        if (this.elements.previewPhysical) {
+            this.elements.previewPhysical.textContent = stats.physical;
+        }
+        if (this.elements.previewMental) {
+            this.elements.previewMental.textContent = stats.mental;
+        }
+        if (this.elements.previewTactical) {
+            this.elements.previewTactical.textContent = stats.tactical;
+        }
+    },
+
+    /**
+     * Clear stats preview
+     */
+    clearStatsPreview() {
+        if (this.elements.previewPhysical) {
+            this.elements.previewPhysical.textContent = '-';
+        }
+        if (this.elements.previewMental) {
+            this.elements.previewMental.textContent = '-';
+        }
+        if (this.elements.previewTactical) {
+            this.elements.previewTactical.textContent = '-';
+        }
     },
 
     /**
@@ -209,11 +422,20 @@ const UI = {
             const roleClass = job ? GameData.getRoleClass(job.role) : 'dps';
             const isSelected = this.selectedMemberIds.includes(member.id);
 
+            // Get recruit name if available
+            let displayName = member.name;
+            if (member.recruitId) {
+                const recruit = GameData.getRecruit(member.recruitId);
+                if (recruit) {
+                    displayName = recruit.name;
+                }
+            }
+
             return `
                 <div class="member-card ${isSelected ? 'selected' : ''}" data-id="${member.id}">
                     <div class="job-icon ${roleClass}">${job ? job.abbr : '?'}</div>
                     <div class="member-info">
-                        <div class="name">${this.escapeHtml(member.name)}</div>
+                        <div class="name">${this.escapeHtml(displayName)}</div>
                         <div class="job-level">${job ? job.name : '未知'} Lv.${member.level}</div>
                     </div>
                     <div class="member-stats">
@@ -276,28 +498,61 @@ const UI = {
     openMemberModal(memberId = null) {
         this.editingMemberId = memberId;
 
+        // Reset filters
+        if (this.elements.filterRace) {
+            this.elements.filterRace.value = '';
+        }
+        if (this.elements.filterJob) {
+            this.elements.filterJob.value = '';
+        }
+
+        // Populate dropdown
+        this.populateRecruitDropdown();
+
         if (memberId) {
             // Edit mode
             const member = this.members.find(m => m.id === memberId);
             if (!member) return;
 
             this.elements.modalTitle.textContent = '編輯隊員';
-            this.elements.memberName.value = member.name;
-            this.elements.memberJob.value = member.job;
-            this.elements.memberLevel.value = member.level;
-            this.elements.memberRace.value = member.race;
-            this.elements.memberPhysical.value = member.physical;
-            this.elements.memberMental.value = member.mental;
-            this.elements.memberTactical.value = member.tactical;
+
+            if (member.recruitId && this.elements.recruitSelect) {
+                this.elements.recruitSelect.value = member.recruitId;
+                this.onRecruitChange();
+            }
+
+            if (this.elements.memberLevel) {
+                this.elements.memberLevel.value = member.level;
+            }
+
+            // Update submit button text
+            const submitBtn = this.elements.memberForm.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.textContent = '更新';
+            }
         } else {
             // Add mode
             this.elements.modalTitle.textContent = '新增隊員';
-            this.elements.memberForm.reset();
-            this.elements.memberLevel.value = 60;
+
+            if (this.elements.recruitSelect) {
+                this.elements.recruitSelect.value = '';
+            }
+            if (this.elements.memberLevel) {
+                this.elements.memberLevel.value = 60;
+            }
+            if (this.elements.recruitInfo) {
+                this.elements.recruitInfo.style.display = 'none';
+            }
+            this.clearStatsPreview();
+
+            // Update submit button text
+            const submitBtn = this.elements.memberForm.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.textContent = '新增';
+            }
         }
 
         this.elements.memberModal.classList.add('active');
-        this.elements.memberName.focus();
     },
 
     /**
@@ -306,14 +561,30 @@ const UI = {
     saveMember(e) {
         e.preventDefault();
 
+        const recruitId = parseInt(this.elements.recruitSelect?.value);
+        if (!recruitId) {
+            alert('請選擇隊員');
+            return;
+        }
+
+        const recruit = GameData.getRecruit(recruitId);
+        if (!recruit) {
+            alert('找不到隊員資料');
+            return;
+        }
+
+        const level = parseInt(this.elements.memberLevel?.value) || 60;
+        const stats = GameData.getRecruitStats(recruitId, level, this.squadRank);
+
         const memberData = {
-            name: this.elements.memberName.value.trim(),
-            job: this.elements.memberJob.value,
-            level: parseInt(this.elements.memberLevel.value) || 60,
-            race: this.elements.memberRace.value,
-            physical: parseInt(this.elements.memberPhysical.value) || 0,
-            mental: parseInt(this.elements.memberMental.value) || 0,
-            tactical: parseInt(this.elements.memberTactical.value) || 0
+            recruitId: recruitId,
+            name: recruit.name,
+            job: recruit.job,
+            race: recruit.race,
+            level: level,
+            physical: stats.physical,
+            mental: stats.mental,
+            tactical: stats.tactical
         };
 
         if (this.editingMemberId) {
@@ -347,40 +618,6 @@ const UI = {
         this.selectedMemberIds = this.selectedMemberIds.filter(sid => sid !== id);
         this.saveMembers();
         this.render();
-    },
-
-    /**
-     * Auto fill job stats based on selected job and level
-     */
-    autoFillJobStats() {
-        const job = this.elements.memberJob.value;
-        const level = parseInt(this.elements.memberLevel.value) || 60;
-
-        if (!job) {
-            alert('請先選擇職業');
-            return;
-        }
-
-        const stats = GameData.calculateStatsForLevel(job, level);
-        if (stats) {
-            this.elements.memberPhysical.value = stats.physical;
-            this.elements.memberMental.value = stats.mental;
-            this.elements.memberTactical.value = stats.tactical;
-        }
-    },
-
-    /**
-     * Update auto fill hint when job changes
-     */
-    updateAutoFillHint() {
-        const job = this.elements.memberJob.value;
-        if (job) {
-            const stats = GameData.calculateStatsForLevel(job, 60);
-            this.elements.autoFillStats.textContent =
-                `自動填入 Lv60 預設值 (${stats.physical}/${stats.mental}/${stats.tactical})`;
-        } else {
-            this.elements.autoFillStats.textContent = '自動填入 Lv60 預設值';
-        }
     },
 
     /**
@@ -494,7 +731,15 @@ const UI = {
                     <div class="result-members">
                         ${result.members.map(m => {
                             const job = GameData.getJob(m.job);
-                            return `<span class="result-member">${this.escapeHtml(m.name)} (${job ? job.name : '?'})</span>`;
+                            // Get recruit name if available
+                            let displayName = m.name;
+                            if (m.recruitId) {
+                                const recruit = GameData.getRecruit(m.recruitId);
+                                if (recruit) {
+                                    displayName = recruit.name;
+                                }
+                            }
+                            return `<span class="result-member">${this.escapeHtml(displayName)} (${job ? job.name : '?'})</span>`;
                         }).join('')}
                     </div>
                     <div class="result-stats">
@@ -551,6 +796,7 @@ const UI = {
             btn.classList.toggle('selected', btn.dataset.type === type);
         });
 
+        this.selectedTrainingType = type;
         Training.setTrainingType(type);
         this.updateTrainingPreview();
     },

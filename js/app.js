@@ -47,27 +47,38 @@
 
     /**
      * Add sample data for demonstration
-     * Uses actual Lv60 stats from GameData
+     * Uses predefined recruits from GameData
      */
     function addSampleData() {
-        // Create sample members with actual job stats
-        const jobs = ['gladiator', 'conjurer', 'lancer', 'archer', 'thaumaturge', 'marauder', 'rogue', 'arcanist'];
-        const names = ['艾琳', '米雅', '賽拉斯', '凱拉', '薇薇安', '葛雷格', '夏德', '艾莉絲'];
-        const races = ['hyur', 'lalafell', 'elezen', 'miqote', 'aura', 'roegadyn', 'miqote', 'lalafell'];
+        // Select 8 diverse recruits covering different roles
+        const sampleRecruitIds = [
+            1016931, // 艾麗絲 (人族 劍術士 - Tank)
+            1016926, // 塞西莉 (人族 幻術士 - Healer)
+            1016929, // 赫羅克 (人族 槍術士 - DPS)
+            1016927, // 奧琳 (人族 弓術士 - Ranged)
+            1016944, // 奴奴魯帕·塔塔魯帕 (拉拉菲爾族 咒術士 - DPS)
+            1016964, // 哈斯塔爾烏雅 (魯加族 斧術士 - Tank)
+            1016955, // 玖茲·阿·嘉奇亞 (貓魅族 雙劍士 - DPS)
+            1016977  // 薩姆嘉 (敖龍族 巴術士 - DPS)
+        ];
 
-        const sampleMembers = jobs.map((job, i) => {
-            const stats = GameData.calculateStatsForLevel(job, 60);
+        const sampleMembers = sampleRecruitIds.map(recruitId => {
+            const recruit = GameData.getRecruit(recruitId);
+            if (!recruit) return null;
+
+            const stats = GameData.getRecruitStats(recruitId, 60, 3);
             return {
                 id: Storage.generateId(),
-                name: names[i],
-                job: job,
+                recruitId: recruitId,
+                name: recruit.name,
+                job: recruit.job,
+                race: recruit.race,
                 level: 60,
-                race: races[i],
                 physical: stats.physical,
                 mental: stats.mental,
                 tactical: stats.tactical
             };
-        });
+        }).filter(m => m !== null);
 
         Storage.saveMembers(sampleMembers);
         UI.loadMembers();

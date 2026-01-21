@@ -137,23 +137,54 @@ const Storage = {
                 throw new Error('Invalid data format: expected array');
             }
 
-            // Validate each member
+            // Validate each member - support both old format (name/job) and new format (recruitId)
             const validMembers = data.filter(member => {
+                // New format with recruitId
+                if (member.recruitId) {
+                    return typeof member.recruitId === 'number';
+                }
+                // Old format with name and job
                 return member.name &&
                        member.job &&
                        typeof member.physical === 'number' &&
                        typeof member.mental === 'number' &&
                        typeof member.tactical === 'number';
-            }).map(member => ({
-                id: member.id || this.generateId(),
-                name: member.name,
-                job: member.job,
-                level: member.level || 60,
-                race: member.race || 'hyur',
-                physical: member.physical,
-                mental: member.mental,
-                tactical: member.tactical
-            }));
+            }).map(member => {
+                const base = {
+                    id: member.id || this.generateId(),
+                    level: member.level || 60
+                };
+
+                // New format with recruitId
+                if (member.recruitId && typeof GameData !== 'undefined') {
+                    const recruit = GameData.getRecruit(member.recruitId);
+                    if (recruit) {
+                        const stats = GameData.getRecruitStats(member.recruitId, base.level, 3);
+                        return {
+                            ...base,
+                            recruitId: member.recruitId,
+                            name: recruit.name,
+                            job: recruit.job,
+                            race: recruit.race,
+                            physical: stats?.physical || 0,
+                            mental: stats?.mental || 0,
+                            tactical: stats?.tactical || 0
+                        };
+                    }
+                }
+
+                // Old format or fallback
+                return {
+                    ...base,
+                    recruitId: member.recruitId || null,
+                    name: member.name,
+                    job: member.job,
+                    race: member.race || 'hyur',
+                    physical: member.physical || 0,
+                    mental: member.mental || 0,
+                    tactical: member.tactical || 0
+                };
+            });
 
             if (validMembers.length === 0) {
                 throw new Error('No valid members found in data');
