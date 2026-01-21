@@ -2,14 +2,22 @@
  * FFXIV Squadron Calculator - Game Data
  * 名詞來源：https://github.com/miaki3457/ffxiv-datamining-tc
  *          https://github.com/xivapi/ffxiv-datamining
+ * 隊員資料來源：ENpcResident.csv
  */
 
 const GameData = {
-    // Squad rank stat caps
+    // Squad rank stat caps - 小隊階級能力上限
     rankCaps: {
         1: 200,
         2: 300,
         3: 400
+    },
+
+    // Squad rank names
+    rankNames: {
+        1: { name: '一級', nameEn: 'Rank 1' },
+        2: { name: '二級', nameEn: 'Rank 2' },
+        3: { name: '三級', nameEn: 'Rank 3' }
     },
 
     // Training effects - 訓練效果
@@ -68,93 +76,46 @@ const GameData = {
 
     // Job data - 職業資料
     // 名稱來源: ClassJob.csv
-    // ID 對應: 1=劍術士, 2=格鬥士, 3=斧術士, 4=槍術士, 5=弓術士, 6=幻術士, 7=咒術士, 26=巴術士, 29=雙劍士
     jobs: {
         gladiator: {
-            id: 1,
-            name: '劍術士',
-            nameEn: 'Gladiator',
-            role: 'tank',
-            abbr: 'GLA',
-            baseStats: { physical: 99, mental: 26, tactical: 57 },
-            description: '坦克，體能專精'
+            id: 1, name: '劍術士', nameEn: 'Gladiator', role: 'tank', abbr: 'GLA',
+            baseStats: { physical: 99, mental: 26, tactical: 57 }
         },
         marauder: {
-            id: 3,
-            name: '斧術士',
-            nameEn: 'Marauder',
-            role: 'tank',
-            abbr: 'MRD',
-            baseStats: { physical: 60, mental: 28, tactical: 104 },
-            description: '坦克，戰術專精'
+            id: 3, name: '斧術士', nameEn: 'Marauder', role: 'tank', abbr: 'MRD',
+            baseStats: { physical: 60, mental: 28, tactical: 104 }
         },
         lancer: {
-            id: 4,
-            name: '槍術士',
-            nameEn: 'Lancer',
-            role: 'dps',
-            abbr: 'LNC',
-            baseStats: { physical: 50, mental: 20, tactical: 80 },
-            description: '近戰 DPS'
+            id: 4, name: '槍術士', nameEn: 'Lancer', role: 'dps', abbr: 'LNC',
+            baseStats: { physical: 50, mental: 20, tactical: 80 }
         },
         pugilist: {
-            id: 2,
-            name: '格鬥士',
-            nameEn: 'Pugilist',
-            role: 'dps',
-            abbr: 'PGL',
-            baseStats: { physical: 54, mental: 32, tactical: 64 },
-            description: '近戰 DPS，平衡型'
+            id: 2, name: '格鬥士', nameEn: 'Pugilist', role: 'dps', abbr: 'PGL',
+            baseStats: { physical: 54, mental: 32, tactical: 64 }
         },
         archer: {
-            id: 5,
-            name: '弓術士',
-            nameEn: 'Archer',
-            role: 'ranged',
-            abbr: 'ARC',
-            baseStats: { physical: 30, mental: 20, tactical: 100 },
-            description: '遠程 DPS，戰術專精'
+            id: 5, name: '弓術士', nameEn: 'Archer', role: 'ranged', abbr: 'ARC',
+            baseStats: { physical: 30, mental: 20, tactical: 100 }
         },
         rogue: {
-            id: 29,
-            name: '雙劍士',
-            nameEn: 'Rogue',
-            role: 'dps',
-            abbr: 'ROG',
-            baseStats: { physical: 36, mental: 20, tactical: 94 },
-            description: '近戰 DPS，戰術專精'
+            id: 29, name: '雙劍士', nameEn: 'Rogue', role: 'dps', abbr: 'ROG',
+            baseStats: { physical: 36, mental: 20, tactical: 94 }
         },
         conjurer: {
-            id: 6,
-            name: '幻術士',
-            nameEn: 'Conjurer',
-            role: 'healer',
-            abbr: 'CNJ',
-            baseStats: { physical: 20, mental: 104, tactical: 26 },
-            description: '治療，心智專精'
+            id: 6, name: '幻術士', nameEn: 'Conjurer', role: 'healer', abbr: 'CNJ',
+            baseStats: { physical: 20, mental: 104, tactical: 26 }
         },
         thaumaturge: {
-            id: 7,
-            name: '咒術士',
-            nameEn: 'Thaumaturge',
-            role: 'dps',
-            abbr: 'THM',
-            baseStats: { physical: 20, mental: 88, tactical: 42 },
-            description: '法系 DPS，心智專精'
+            id: 7, name: '咒術士', nameEn: 'Thaumaturge', role: 'dps', abbr: 'THM',
+            baseStats: { physical: 20, mental: 88, tactical: 42 }
         },
         arcanist: {
-            id: 26,
-            name: '巴術士',
-            nameEn: 'Arcanist',
-            role: 'dps',
-            abbr: 'ACN',
-            baseStats: { physical: 20, mental: 76, tactical: 54 },
-            description: '法系 DPS'
+            id: 26, name: '巴術士', nameEn: 'Arcanist', role: 'dps', abbr: 'ACN',
+            baseStats: { physical: 20, mental: 76, tactical: 54 }
         }
     },
 
     // Race data - 種族資料
-    // 名稱來源: Race.csv
     races: {
         hyur: { id: 1, name: '人族', nameEn: 'Hyur' },
         elezen: { id: 2, name: '精靈族', nameEn: 'Elezen' },
@@ -164,11 +125,80 @@ const GameData = {
         aura: { id: 6, name: '敖龍族', nameEn: 'Au Ra' }
     },
 
+    // Squadron Recruits - 小隊隊員
+    // 名稱來源: ENpcResident.csv (ID 1016926-1016985)
+    // 職業對應來源: https://ffxiv.consolegameswiki.com/wiki/Squadron_Recruits
+    recruits: [
+        // 人族 Hyur
+        { id: 1016926, name: '塞西莉', nameEn: 'Cecily', race: 'hyur', gender: 'F', job: 'conjurer' },
+        { id: 1016927, name: '奧琳', nameEn: 'Auelin', race: 'hyur', gender: 'F', job: 'archer' },
+        { id: 1016928, name: '莫賴爾', nameEn: 'Morel', race: 'hyur', gender: 'M', job: 'arcanist' },
+        { id: 1016929, name: '赫羅克', nameEn: 'Hroch', race: 'hyur', gender: 'M', job: 'lancer' },
+        { id: 1016930, name: '克里莎貝爾', nameEn: 'Chrysabel', race: 'hyur', gender: 'F', job: 'pugilist' },
+        { id: 1016931, name: '艾麗絲', nameEn: 'Ellice', race: 'hyur', gender: 'F', job: 'gladiator' },
+        { id: 1016932, name: '多爾芬', nameEn: 'Dolfin', race: 'hyur', gender: 'M', job: 'thaumaturge' },
+        { id: 1016933, name: '西莉亞', nameEn: 'Cilia', race: 'hyur', gender: 'F', job: 'thaumaturge' },
+        { id: 1016984, name: '休巴爾德', nameEn: 'Huebald', race: 'hyur', gender: 'M', job: 'marauder' },
+        { id: 1016985, name: '阿里馬烏斯', nameEn: 'Alimahus', race: 'hyur', gender: 'M', job: 'rogue' },
+        // 精靈族 Elezen
+        { id: 1016934, name: '帕尼爾', nameEn: 'Pagneul', race: 'elezen', gender: 'M', job: 'lancer' },
+        { id: 1016935, name: '德爾布瓦斯', nameEn: 'Delboisse', race: 'elezen', gender: 'M', job: 'gladiator' },
+        { id: 1016936, name: '索莉', nameEn: 'Ceaulie', race: 'elezen', gender: 'F', job: 'archer' },
+        { id: 1016937, name: '里威恩娜', nameEn: 'Rivienne', race: 'elezen', gender: 'F', job: 'conjurer' },
+        { id: 1016938, name: '拉邦里', nameEn: 'Labonrit', race: 'elezen', gender: 'M', job: 'thaumaturge' },
+        { id: 1016939, name: '特勒扎克', nameEn: 'Teulzacq', race: 'elezen', gender: 'M', job: 'pugilist' },
+        { id: 1016940, name: '若萊娜', nameEn: 'Jolaine', race: 'elezen', gender: 'F', job: 'marauder' },
+        { id: 1016941, name: '索菲娜', nameEn: 'Sofine', race: 'elezen', gender: 'F', job: 'arcanist' },
+        { id: 1016942, name: '默力艾爾', nameEn: 'Meuliaire', race: 'elezen', gender: 'M', job: 'rogue' },
+        { id: 1016943, name: '克利爾朵', nameEn: 'Crilde', race: 'elezen', gender: 'F', job: 'rogue' },
+        // 拉拉菲爾族 Lalafell
+        { id: 1016944, name: '奴奴魯帕·塔塔魯帕', nameEn: 'Nunulupa Tatalupa', race: 'lalafell', gender: 'M', job: 'thaumaturge' },
+        { id: 1016945, name: '納納索米', nameEn: 'Nanasomi', race: 'lalafell', gender: 'M', job: 'archer' },
+        { id: 1016946, name: '莉莉芭', nameEn: 'Liliba', race: 'lalafell', gender: 'F', job: 'conjurer' },
+        { id: 1016947, name: '薩薩修', nameEn: 'Sasashu', race: 'lalafell', gender: 'F', job: 'lancer' },
+        { id: 1016948, name: '姆吉恩·珀拉吉恩', nameEn: 'Mujen Polajen', race: 'lalafell', gender: 'M', job: 'rogue' },
+        { id: 1016949, name: '穆穆塔諾', nameEn: 'Mumutano', race: 'lalafell', gender: 'M', job: 'gladiator' },
+        { id: 1016950, name: '特瓦瓦', nameEn: 'Tewawa', race: 'lalafell', gender: 'F', job: 'arcanist' },
+        { id: 1016951, name: '托托蒂', nameEn: 'Totodi', race: 'lalafell', gender: 'F', job: 'pugilist' },
+        { id: 1016952, name: '克魯莫莫', nameEn: 'Kelmomo', race: 'lalafell', gender: 'F', job: 'marauder' },
+        { id: 1016953, name: '塞塞力庫', nameEn: 'Seserikku', race: 'lalafell', gender: 'M', job: 'marauder' },
+        // 貓魅族 Miqo'te
+        { id: 1016954, name: '碧·貝納·提亞', nameEn: "B'benha Tia", race: 'miqote', gender: 'M', job: 'lancer' },
+        { id: 1016955, name: '玖茲·阿·嘉奇亞', nameEn: "Ziuz'a Jakkya", race: 'miqote', gender: 'M', job: 'rogue' },
+        { id: 1016956, name: '維·恩波蘿', nameEn: "V'nbolo", race: 'miqote', gender: 'F', job: 'archer' },
+        { id: 1016957, name: '奧雅·奈爾赫', nameEn: 'Oah Nelhah', race: 'miqote', gender: 'F', job: 'pugilist' },
+        { id: 1016958, name: '德·福爾·提亞', nameEn: "D'fhul Tia", race: 'miqote', gender: 'M', job: 'conjurer' },
+        { id: 1016959, name: '格塔·阿·帕尼帕爾', nameEn: "Gota'a Panipahr", race: 'miqote', gender: 'M', job: 'thaumaturge' },
+        { id: 1016960, name: '嘉·魯達巴', nameEn: "J'ludaba", race: 'miqote', gender: 'F', job: 'arcanist' },
+        { id: 1016961, name: '伊恩·雅瑪里約', nameEn: 'Yehn Amariyo', race: 'miqote', gender: 'F', job: 'gladiator' },
+        { id: 1016962, name: '艾·派特爾密', nameEn: "E'ptolmi", race: 'miqote', gender: 'F', job: 'archer' },
+        { id: 1016963, name: '凱達·托·莫伊', nameEn: "Kehda'to Moui", race: 'miqote', gender: 'M', job: 'archer' },
+        // 魯加族 Roegadyn
+        { id: 1016964, name: '哈斯塔爾烏雅', nameEn: 'Hastaloeya', race: 'roegadyn', gender: 'M', job: 'marauder' },
+        { id: 1016965, name: '納因·戈特', nameEn: 'Gnawing Goat', race: 'roegadyn', gender: 'M', job: 'conjurer' },
+        { id: 1016966, name: '庫恩布瑞達', nameEn: 'Koenbryda', race: 'roegadyn', gender: 'F', job: 'gladiator' },
+        { id: 1016967, name: '科爾蕾絲·威斯帕', nameEn: 'Careless Whisper', race: 'roegadyn', gender: 'F', job: 'rogue' },
+        { id: 1016968, name: '里爾哈厄', nameEn: 'Rhylharr', race: 'roegadyn', gender: 'M', job: 'pugilist' },
+        { id: 1016969, name: '卡拉斯·斯泰德', nameEn: 'Callous Steed', race: 'roegadyn', gender: 'M', job: 'thaumaturge' },
+        { id: 1016970, name: '因格希爾希斯', nameEn: 'Inghilswys', race: 'roegadyn', gender: 'F', job: 'lancer' },
+        { id: 1016971, name: '菲爾萊絲·馮', nameEn: 'Fearless Fawn', race: 'roegadyn', gender: 'F', job: 'archer' },
+        { id: 1016972, name: '雷爾托塔', nameEn: 'Raelthota', race: 'roegadyn', gender: 'F', job: 'arcanist' },
+        { id: 1016973, name: '瑞京·奧克斯', nameEn: 'Raging Ox', race: 'roegadyn', gender: 'M', job: 'arcanist' },
+        // 敖龍族 Au Ra
+        { id: 1016974, name: '彩雲', nameEn: 'Saiun', race: 'aura', gender: 'M', job: 'marauder' },
+        { id: 1016975, name: '艾爾齊', nameEn: 'Elchi', race: 'aura', gender: 'M', job: 'lancer' },
+        { id: 1016976, name: '淡雪', nameEn: 'Awayuki', race: 'aura', gender: 'F', job: 'conjurer' },
+        { id: 1016977, name: '薩姆嘉', nameEn: 'Samga', race: 'aura', gender: 'F', job: 'arcanist' },
+        { id: 1016978, name: '梅園', nameEn: 'Baien', race: 'aura', gender: 'M', job: 'thaumaturge' },
+        { id: 1016979, name: '貝科特爾', nameEn: 'Begter', race: 'aura', gender: 'M', job: 'rogue' },
+        { id: 1016980, name: '雲切', nameEn: 'Kumokiri', race: 'aura', gender: 'F', job: 'gladiator' },
+        { id: 1016981, name: '朵拉嘉娜', nameEn: 'Toragana', race: 'aura', gender: 'F', job: 'archer' },
+        { id: 1016982, name: '雷電', nameEn: 'Raiden', race: 'aura', gender: 'M', job: 'pugilist' },
+        { id: 1016983, name: '科爾琪', nameEn: 'Khorchi', race: 'aura', gender: 'F', job: 'pugilist' }
+    ],
+
     // Mission data - 任務資料
-    // 名稱來源: GcArmyExpedition.csv
-    // 類型來源: GcArmyExpeditionType.csv (簡單任務/普通任務/特殊任務)
     missions: {
-        // 簡單任務 (Lv 1-20)
         trainee: [
             { id: 1, name: '巡邏城內', nameEn: 'City Patrol', level: 1, physical: 145, mental: 140, tactical: 140, flagged: false },
             { id: 2, name: '向附近據點傳令', nameEn: 'Military Courier', level: 1, physical: 165, mental: 160, tactical: 160, flagged: false },
@@ -178,7 +208,6 @@ const GameData = {
             { id: 6, name: '驅除魔物', nameEn: 'Pest Eradication', level: 15, physical: 320, mental: 335, tactical: 325, flagged: false },
             { id: 7, name: '重要任務：消滅低級妖異', nameEn: 'Flagged Mission: Voidsent Elimination', level: 20, physical: 225, mental: 205, tactical: 230, flagged: true }
         ],
-        // 普通任務 (Lv 20-40)
         routine: [
             { id: 8, name: '支援前線部隊', nameEn: 'Frontline Support', level: 20, physical: 410, mental: 435, tactical: 420, flagged: false },
             { id: 9, name: '護衛同盟軍軍官', nameEn: 'Officer Escort', level: 20, physical: 415, mental: 440, tactical: 425, flagged: false },
@@ -189,7 +218,6 @@ const GameData = {
             { id: 14, name: '重要任務：奪取水晶', nameEn: 'Flagged Mission: Crystal Recovery', level: 40, physical: 315, mental: 325, tactical: 340, flagged: true },
             { id: 34, name: '重要任務：殲滅帝國軍特殊部隊', nameEn: 'Flagged Mission: Sapper Strike', level: 50, physical: 370, mental: 355, tactical: 345, flagged: true }
         ],
-        // 特殊任務 (Lv 40-50)
         priority: [
             { id: 16, name: '強襲蠻族據點', nameEn: 'Stronghold Assault', level: 40, physical: 530, mental: 560, tactical: 540, flagged: false },
             { id: 17, name: '取締違法武器交易', nameEn: 'Black Market Crackdown', level: 40, physical: 385, mental: 265, tactical: 540, flagged: false },
@@ -212,41 +240,52 @@ const GameData = {
         ]
     },
 
-    // Get job info by key
+    // Get recruit by ID
+    getRecruit(id) {
+        return this.recruits.find(r => r.id === id) || null;
+    },
+
+    // Get all recruits
+    getAllRecruits() {
+        return this.recruits;
+    },
+
+    // Get recruits by race
+    getRecruitsByRace(race) {
+        return this.recruits.filter(r => r.race === race);
+    },
+
+    // Get recruits by job
+    getRecruitsByJob(job) {
+        return this.recruits.filter(r => r.job === job);
+    },
+
+    // Get job info
     getJob(jobKey) {
         return this.jobs[jobKey] || null;
     },
 
     // Get all jobs as array
     getAllJobs() {
-        return Object.entries(this.jobs).map(([key, job]) => ({
-            key,
-            ...job
-        }));
+        return Object.entries(this.jobs).map(([key, job]) => ({ key, ...job }));
     },
 
     // Get all races as array
     getAllRaces() {
-        return Object.entries(this.races).map(([key, race]) => ({
-            key,
-            ...race
-        }));
+        return Object.entries(this.races).map(([key, race]) => ({ key, ...race }));
     },
 
-    // Get training effect by type
+    // Get training effect
     getTraining(type) {
         return this.trainingEffects[type] || null;
     },
 
-    // Get all training types
+    // Get all trainings
     getAllTrainings() {
-        return Object.entries(this.trainingEffects).map(([key, training]) => ({
-            key,
-            ...training
-        }));
+        return Object.entries(this.trainingEffects).map(([key, training]) => ({ key, ...training }));
     },
 
-    // Get all missions as flat array
+    // Get all missions
     getAllMissions() {
         return [
             ...this.missions.trainee.map(m => ({ ...m, tier: 'trainee', tierName: '簡單任務' })),
@@ -255,36 +294,36 @@ const GameData = {
         ];
     },
 
-    // Get missions by tier
-    getMissionsByTier(tier) {
-        return this.missions[tier] || [];
-    },
-
-    // Calculate level-adjusted stats
-    calculateStatsForLevel(jobKey, level) {
+    // Calculate stats for level with rank cap
+    calculateStatsForLevel(jobKey, level, rank = 3) {
         const job = this.jobs[jobKey];
         if (!job) return null;
 
+        const cap = this.rankCaps[rank] || 400;
         const ratio = level / 60;
+
         return {
-            physical: Math.round(job.baseStats.physical * ratio),
-            mental: Math.round(job.baseStats.mental * ratio),
-            tactical: Math.round(job.baseStats.tactical * ratio)
+            physical: Math.min(Math.round(job.baseStats.physical * ratio), cap),
+            mental: Math.min(Math.round(job.baseStats.mental * ratio), cap),
+            tactical: Math.min(Math.round(job.baseStats.tactical * ratio), cap)
         };
     },
 
-    // Get role icon class
+    // Get recruit stats at level with rank
+    getRecruitStats(recruitId, level = 60, rank = 3) {
+        const recruit = this.getRecruit(recruitId);
+        if (!recruit) return null;
+
+        return this.calculateStatsForLevel(recruit.job, level, rank);
+    },
+
+    // Get role class
     getRoleClass(role) {
-        const roleClasses = {
-            tank: 'tank',
-            healer: 'healer',
-            dps: 'dps',
-            ranged: 'ranged'
-        };
+        const roleClasses = { tank: 'tank', healer: 'healer', dps: 'dps', ranged: 'ranged' };
         return roleClasses[role] || 'dps';
     },
 
-    // Calculate total stats for a group
+    // Calculate group total
     calculateGroupTotal(members) {
         return members.reduce((total, member) => ({
             physical: total.physical + (member.physical || 0),
@@ -293,7 +332,7 @@ const GameData = {
         }), { physical: 0, mental: 0, tactical: 0 });
     },
 
-    // Get stat display name
+    // Get stat name
     getStatName(stat) {
         return this.statNames[stat]?.name || stat;
     }
