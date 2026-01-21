@@ -113,7 +113,7 @@ const UI = {
                     <img class="recruit-card-img"
                          src="${imgUrl}"
                          alt="${recruit.name}"
-                         onerror="this.src='https://xivapi.com/i/061000/061812.png'">
+                         onerror="this.src='images/recruits/default.png'">
                     <div class="recruit-card-name">${recruit.name}</div>
                     <div class="recruit-card-job">${job?.abbr || '?'}</div>
                 </div>
@@ -202,7 +202,7 @@ const UI = {
         if (this.elements.selectedRecruitImg) {
             this.elements.selectedRecruitImg.src = imgUrl;
             this.elements.selectedRecruitImg.onerror = function() {
-                this.src = 'https://xivapi.com/i/061000/061812.png';
+                this.src = 'images/recruits/default.png';
             };
         }
 

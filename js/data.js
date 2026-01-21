@@ -198,12 +198,12 @@ const GameData = {
         { id: 1016983, name: '科爾琪', nameEn: 'Khorchi', race: 'aura', gender: 'F', job: 'pugilist', img: 'AurafKhorchi.jpg' }
     ],
 
-    // Image base URL
-    imageBaseUrl: 'https://ffxiv.consolegameswiki.com/wiki/Special:FilePath/',
+    // Image base URL (local)
+    imageBaseUrl: 'images/recruits/',
 
     // Get recruit image URL
     getRecruitImageUrl(recruit) {
-        if (!recruit || !recruit.img) return null;
+        if (!recruit || !recruit.img) return 'images/recruits/default.png';
         return this.imageBaseUrl + recruit.img;
     },
 
