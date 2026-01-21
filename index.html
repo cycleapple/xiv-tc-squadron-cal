@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFXIV 冒險者小隊計算機</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <h1>FFXIV 冒險者小隊計算機</h1>
+            <p class="subtitle">Squadron Mission Calculator</p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Left Panel: Member Management -->
+            <section class="panel member-panel">
+                <div class="panel-header">
+                    <h2>隊員管理</h2>
+                    <button id="addMemberBtn" class="btn btn-primary">+ 新增隊員</button>
+                </div>
+                <div id="memberList" class="member-list">
+                    <!-- Member cards will be generated here -->
+                </div>
+                <div class="panel-footer">
+                    <button id="importBtn" class="btn btn-secondary">匯入設定</button>
+                    <button id="exportBtn" class="btn btn-secondary">匯出設定</button>
+                </div>
+            </section>
+
+            <!-- Right Panel: Mission & Results -->
+            <section class="panel mission-panel">
+                <!-- Mission Settings -->
+                <div class="sub-panel mission-settings">
+                    <h2>任務設定</h2>
+                    <div class="stat-requirements">
+                        <div class="stat-input-group">
+                            <label for="reqPhysical">
+                                <span class="stat-icon physical"></span>
+                                體能
+                            </label>
+                            <input type="number" id="reqPhysical" min="0" max="700" value="0">
+                        </div>
+                        <div class="stat-input-group">
+                            <label for="reqMental">
+                                <span class="stat-icon mental"></span>
+                                心智
+                            </label>
+                            <input type="number" id="reqMental" min="0" max="700" value="0">
+                        </div>
+                        <div class="stat-input-group">
+                            <label for="reqTactical">
+                                <span class="stat-icon tactical"></span>
+                                戰術
+                            </label>
+                            <input type="number" id="reqTactical" min="0" max="700" value="0">
+                        </div>
+                    </div>
+
+                    <div class="preset-missions">
+                        <label>快速選擇：</label>
+                        <select id="presetMissions">
+                            <option value="">-- 選擇預設任務 --</option>
+                            <optgroup label="階級任務">
+                                <option value="280,280,280">均衡型 (280/280/280)</option>
+                                <option value="400,200,200">物理型 (400/200/200)</option>
+                                <option value="200,400,200">精神型 (200/400/200)</option>
+                                <option value="200,200,400">戰術型 (200/200/400)</option>
+                            </optgroup>
+                            <optgroup label="特殊任務">
+                                <option value="305,275,275">物理偏重 (305/275/275)</option>
+                                <option value="275,305,275">精神偏重 (275/305/275)</option>
+                                <option value="275,275,305">戰術偏重 (275/275/305)</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <button id="calculateBtn" class="btn btn-primary btn-large">計算最佳組合</button>
+                </div>
+
+                <!-- Results Display -->
+                <div class="sub-panel results-display">
+                    <h2>計算結果</h2>
+                    <div id="resultsContainer" class="results-container">
+                        <p class="placeholder-text">設定隊員與任務需求後，點擊「計算最佳組合」</p>
+                    </div>
+                </div>
+
+                <!-- Training Simulation -->
+                <div class="sub-panel training-panel">
+                    <div class="panel-header-toggle">
+                        <h2>訓練模擬</h2>
+                        <button id="toggleTraining" class="btn btn-icon">▼</button>
+                    </div>
+                    <div id="trainingContent" class="training-content">
+                        <div class="training-controls">
+                            <div class="training-type-select">
+                                <label>訓練類型：</label>
+                                <div class="training-types">
+                                    <button class="training-type-btn" data-type="physical-a">基礎：體能</button>
+                                    <button class="training-type-btn" data-type="mental-a">基礎：心智</button>
+                                    <button class="training-type-btn" data-type="tactical-a">基礎：戰術</button>
+                                    <button class="training-type-btn" data-type="physical-mental">組合：體能＆心智</button>
+                                    <button class="training-type-btn" data-type="physical-tactical">組合：體能＆戰術</button>
+                                    <button class="training-type-btn" data-type="mental-tactical">組合：心智＆戰術</button>
+                                </div>
+                            </div>
+                            <div class="training-preview">
+                                <h3>訓練效果預覽</h3>
+                                <div id="trainingPreview" class="preview-stats">
+                                    <p class="placeholder-text">選擇訓練類型查看效果</p>
+                                </div>
+                            </div>
+                            <button id="applyTraining" class="btn btn-secondary" disabled>套用訓練</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Member Edit Modal -->
+        <div id="memberModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modalTitle">新增隊員</h2>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <form id="memberForm">
+                    <div class="form-group">
+                        <label for="memberName">名稱</label>
+                        <input type="text" id="memberName" required placeholder="輸入隊員名稱">
+                    </div>
+                    <div class="form-group">
+                        <label for="memberJob">職業</label>
+                        <select id="memberJob" required>
+                            <option value="">-- 選擇職業 --</option>
+                            <option value="gladiator">劍術士 Gladiator</option>
+                            <option value="marauder">斧術士 Marauder</option>
+                            <option value="lancer">槍術士 Lancer</option>
+                            <option value="pugilist">格鬥士 Pugilist</option>
+                            <option value="archer">弓術士 Archer</option>
+                            <option value="rogue">雙劍士 Rogue</option>
+                            <option value="conjurer">幻術士 Conjurer</option>
+                            <option value="thaumaturge">咒術士 Thaumaturge</option>
+                            <option value="arcanist">巴術士 Arcanist</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="memberLevel">等級</label>
+                        <input type="number" id="memberLevel" min="1" max="60" value="60">
+                    </div>
+                    <div class="form-group">
+                        <label for="memberRace">種族</label>
+                        <select id="memberRace">
+                            <option value="hyur">人族 Hyur</option>
+                            <option value="elezen">精靈族 Elezen</option>
+                            <option value="lalafell">拉拉菲爾族 Lalafell</option>
+                            <option value="miqote">貓魅族 Miqo'te</option>
+                            <option value="roegadyn">魯加族 Roegadyn</option>
+                            <option value="aura">敖龍族 Au Ra</option>
+                        </select>
+                    </div>
+                    <div class="form-group stats-group">
+                        <label>能力值</label>
+                        <div class="stats-inputs">
+                            <div class="stat-input">
+                                <span class="stat-icon physical"></span>
+                                <input type="number" id="memberPhysical" min="0" max="200" placeholder="體能">
+                            </div>
+                            <div class="stat-input">
+                                <span class="stat-icon mental"></span>
+                                <input type="number" id="memberMental" min="0" max="200" placeholder="心智">
+                            </div>
+                            <div class="stat-input">
+                                <span class="stat-icon tactical"></span>
+                                <input type="number" id="memberTactical" min="0" max="200" placeholder="戰術">
+                            </div>
+                        </div>
+                        <button type="button" id="autoFillStats" class="btn btn-secondary btn-small">自動填入 Lv60 預設值</button>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary modal-cancel">取消</button>
+                        <button type="submit" class="btn btn-primary">儲存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Import/Export Modal -->
+        <div id="importExportModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="importExportTitle">匯入/匯出</h2>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <textarea id="importExportData" rows="10" placeholder="JSON 資料"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary modal-cancel">取消</button>
+                    <button type="button" id="confirmImport" class="btn btn-primary">確認匯入</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>資料參考：<a href="https://ffxiv.consolegameswiki.com/wiki/Adventurer_Squadrons" target="_blank">FFXIV Wiki</a> |
+               <a href="https://ffxivsquadron.com/" target="_blank">FFXIVSquadron</a></p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/data.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/calculator.js"></script>
+    <script src="js/training.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
