@@ -746,8 +746,8 @@ body {
     background: var(--bg-secondary);
     border-radius: var(--radius-lg);
     padding: 20px;
-    width: 90%;
-    max-width: 450px;
+    width: 95%;
+    max-width: 550px;
     max-height: 90vh;
     overflow-y: auto;
     border: 1px solid var(--border-color);
@@ -884,37 +884,157 @@ body {
     font-size: 0.85rem;
 }
 
-/* ==================== Recruit Filters ==================== */
-.recruit-filters {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 15px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid var(--border-color);
+/* ==================== Recruit Filter Pills ==================== */
+.recruit-filter-section {
+    margin-bottom: 12px;
 }
 
-.filter-group {
+.filter-pills {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
 }
 
-.filter-group label {
-    font-size: 0.8rem;
+.filter-pill {
+    padding: 4px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 15px;
+    background: var(--bg-tertiary);
     color: var(--text-muted);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: var(--transition);
 }
 
-.filter-group select {
-    padding: 6px 10px;
+.filter-pill:hover {
+    border-color: var(--accent);
+    color: var(--text-primary);
+}
+
+.filter-pill.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+}
+
+.filter-pill.tank { border-left: 2px solid #3d5a80; }
+.filter-pill.healer { border-left: 2px solid #5a9c69; }
+.filter-pill.dps { border-left: 2px solid #c94040; }
+
+/* ==================== Recruit Grid ==================== */
+.recruit-grid-container {
+    max-height: 280px;
+    overflow-y: auto;
     border: 1px solid var(--border-color);
     border-radius: var(--radius);
     background: var(--bg-tertiary);
-    color: var(--text-primary);
-    font-size: 0.85rem;
+    margin-bottom: 12px;
 }
 
-/* ==================== Recruit Info ==================== */
+.recruit-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    padding: 10px;
+}
+
+.recruit-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 4px;
+    border-radius: var(--radius);
+    background: var(--bg-secondary);
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.recruit-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+}
+
+.recruit-card.selected {
+    border-color: var(--accent-gold);
+    background: var(--bg-card-hover);
+}
+
+.recruit-card.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.recruit-card-img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--border-color);
+    background: var(--bg-tertiary);
+}
+
+.recruit-card.selected .recruit-card-img {
+    border-color: var(--accent-gold);
+}
+
+.recruit-card-name {
+    margin-top: 4px;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    text-align: center;
+    line-height: 1.2;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.recruit-card-job {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+/* ==================== Selected Recruit Preview ==================== */
+.selected-recruit-preview {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--accent-gold);
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+}
+
+.selected-recruit-preview img {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--accent-gold);
+}
+
+.selected-recruit-info {
+    flex: 1;
+}
+
+.selected-recruit-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.selected-recruit-details {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+/* ==================== Recruit Info (legacy) ==================== */
 .recruit-info {
     background: var(--bg-tertiary);
     border-radius: var(--radius);
@@ -932,6 +1052,19 @@ body {
 
 .recruit-detail .label {
     color: var(--text-muted);
+}
+
+/* Responsive grid */
+@media (max-width: 600px) {
+    .recruit-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (max-width: 400px) {
+    .recruit-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
 }
 
 /* ==================== Stats Input ==================== */

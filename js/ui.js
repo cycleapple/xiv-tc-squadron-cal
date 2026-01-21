@@ -23,7 +23,6 @@ const UI = {
         this.loadMembers();
         this.loadSettings();
         this.populateMissionSelector();
-        this.populateRecruitDropdown();
         this.render();
     },
 
@@ -74,55 +73,172 @@ const UI = {
         select.appendChild(priorityGroup);
     },
 
-    /**
-     * Populate recruit dropdown
-     */
-    populateRecruitDropdown(raceFilter = '', jobFilter = '') {
-        const select = this.elements.recruitSelect;
-        if (!select) return;
+    // Current filter state
+    currentRaceFilter: '',
+    currentJobFilter: '',
 
-        // Get existing members' recruit IDs to exclude
+    /**
+     * Populate recruit grid with visual cards
+     */
+    populateRecruitGrid() {
+        const grid = this.elements.recruitGrid;
+        if (!grid) return;
+
+        // Get existing members' recruit IDs to mark as disabled
         const existingRecruitIds = this.members
             .filter(m => m.id !== this.editingMemberId)
             .map(m => m.recruitId);
 
-        select.innerHTML = '<option value="">-- 選擇隊員 --</option>';
-
         // Filter recruits
         let recruits = GameData.getAllRecruits();
-        if (raceFilter) {
-            recruits = recruits.filter(r => r.race === raceFilter);
+        if (this.currentRaceFilter) {
+            recruits = recruits.filter(r => r.race === this.currentRaceFilter);
         }
-        if (jobFilter) {
-            recruits = recruits.filter(r => r.job === jobFilter);
+        if (this.currentJobFilter) {
+            recruits = recruits.filter(r => r.job === this.currentJobFilter);
         }
 
-        // Exclude already added recruits (unless editing that same recruit)
-        recruits = recruits.filter(r => !existingRecruitIds.includes(r.id));
+        const selectedId = parseInt(this.elements.recruitSelect?.value) || null;
 
-        // Group by race
-        const raceGroups = {};
-        recruits.forEach(recruit => {
-            const raceName = GameData.races[recruit.race]?.name || recruit.race;
-            if (!raceGroups[raceName]) {
-                raceGroups[raceName] = [];
-            }
-            raceGroups[raceName].push(recruit);
-        });
+        grid.innerHTML = recruits.map(recruit => {
+            const job = GameData.getJob(recruit.job);
+            const isDisabled = existingRecruitIds.includes(recruit.id);
+            const isSelected = recruit.id === selectedId;
+            const imgUrl = GameData.getRecruitImageUrl(recruit);
 
-        // Create optgroups
-        Object.entries(raceGroups).forEach(([raceName, raceRecruits]) => {
-            const group = document.createElement('optgroup');
-            group.label = raceName;
-            raceRecruits.forEach(recruit => {
-                const job = GameData.getJob(recruit.job);
-                const opt = document.createElement('option');
-                opt.value = recruit.id;
-                opt.textContent = `${recruit.name} (${job ? job.name : recruit.job})`;
-                group.appendChild(opt);
+            return `
+                <div class="recruit-card ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}"
+                     data-recruit-id="${recruit.id}"
+                     title="${recruit.name} (${job?.name || recruit.job})">
+                    <img class="recruit-card-img"
+                         src="${imgUrl}"
+                         alt="${recruit.name}"
+                         onerror="this.src='https://xivapi.com/i/061000/061812.png'">
+                    <div class="recruit-card-name">${recruit.name}</div>
+                    <div class="recruit-card-job">${job?.abbr || '?'}</div>
+                </div>
+            `;
+        }).join('');
+
+        // Bind click events to cards
+        grid.querySelectorAll('.recruit-card:not(.disabled)').forEach(card => {
+            card.addEventListener('click', () => {
+                this.selectRecruit(parseInt(card.dataset.recruitId));
             });
-            select.appendChild(group);
         });
+    },
+
+    /**
+     * Handle race filter pill click
+     */
+    onRaceFilterClick(pill) {
+        // Update active state
+        this.elements.raceFilterPills.querySelectorAll('.filter-pill').forEach(p => {
+            p.classList.remove('active');
+        });
+        pill.classList.add('active');
+
+        this.currentRaceFilter = pill.dataset.race || '';
+        this.populateRecruitGrid();
+    },
+
+    /**
+     * Handle job filter pill click
+     */
+    onJobFilterClick(pill) {
+        // Update active state
+        this.elements.jobFilterPills.querySelectorAll('.filter-pill').forEach(p => {
+            p.classList.remove('active');
+        });
+        pill.classList.add('active');
+
+        this.currentJobFilter = pill.dataset.job || '';
+        this.populateRecruitGrid();
+    },
+
+    /**
+     * Select a recruit from the grid
+     */
+    selectRecruit(recruitId) {
+        const recruit = GameData.getRecruit(recruitId);
+        if (!recruit) return;
+
+        // Update hidden input
+        if (this.elements.recruitSelect) {
+            this.elements.recruitSelect.value = recruitId;
+        }
+
+        // Update grid selection
+        this.elements.recruitGrid?.querySelectorAll('.recruit-card').forEach(card => {
+            card.classList.toggle('selected', parseInt(card.dataset.recruitId) === recruitId);
+        });
+
+        // Show selected recruit preview
+        this.showSelectedRecruitPreview(recruit);
+
+        // Show job selector and set default job
+        if (this.elements.jobSelectGroup) {
+            this.elements.jobSelectGroup.style.display = 'block';
+        }
+        if (this.elements.memberJob) {
+            this.elements.memberJob.value = recruit.job;
+        }
+
+        // Auto-fill stats (only in add mode)
+        if (!this.editingMemberId) {
+            this.autoFillBaseStats();
+        }
+    },
+
+    /**
+     * Show selected recruit preview
+     */
+    showSelectedRecruitPreview(recruit) {
+        if (!this.elements.selectedRecruitPreview) return;
+
+        this.elements.selectedRecruitPreview.style.display = 'flex';
+
+        const imgUrl = GameData.getRecruitImageUrl(recruit);
+        if (this.elements.selectedRecruitImg) {
+            this.elements.selectedRecruitImg.src = imgUrl;
+            this.elements.selectedRecruitImg.onerror = function() {
+                this.src = 'https://xivapi.com/i/061000/061812.png';
+            };
+        }
+
+        if (this.elements.selectedRecruitName) {
+            this.elements.selectedRecruitName.textContent = recruit.name;
+        }
+
+        const job = GameData.getJob(recruit.job);
+        const race = GameData.races[recruit.race];
+
+        if (this.elements.recruitOriginalJob) {
+            this.elements.recruitOriginalJob.textContent = job ? job.name : recruit.job;
+        }
+        if (this.elements.recruitRace) {
+            this.elements.recruitRace.textContent = race ? race.name : recruit.race;
+        }
+    },
+
+    /**
+     * Clear recruit selection
+     */
+    clearRecruitSelection() {
+        if (this.elements.recruitSelect) {
+            this.elements.recruitSelect.value = '';
+        }
+
+        if (this.elements.selectedRecruitPreview) {
+            this.elements.selectedRecruitPreview.style.display = 'none';
+        }
+
+        if (this.elements.jobSelectGroup) {
+            this.elements.jobSelectGroup.style.display = 'none';
+        }
+
+        this.clearStatsInputs();
+        this.populateRecruitGrid();
     },
 
     /**
@@ -144,16 +260,20 @@ const UI = {
             reqTactical: document.getElementById('reqTactical'),
             presetMissions: document.getElementById('presetMissions'),
 
-            // Member modal - recruit selection with editable stats
+            // Member modal - visual recruit selection
             memberModal: document.getElementById('memberModal'),
             modalTitle: document.getElementById('modalTitle'),
             memberForm: document.getElementById('memberForm'),
-            filterRace: document.getElementById('filterRace'),
-            filterJob: document.getElementById('filterJob'),
+            raceFilterPills: document.getElementById('raceFilterPills'),
+            jobFilterPills: document.getElementById('jobFilterPills'),
+            recruitGrid: document.getElementById('recruitGrid'),
             recruitSelect: document.getElementById('recruitSelect'),
-            recruitInfo: document.getElementById('recruitInfo'),
+            selectedRecruitPreview: document.getElementById('selectedRecruitPreview'),
+            selectedRecruitImg: document.getElementById('selectedRecruitImg'),
+            selectedRecruitName: document.getElementById('selectedRecruitName'),
             recruitOriginalJob: document.getElementById('recruitOriginalJob'),
             recruitRace: document.getElementById('recruitRace'),
+            clearRecruitBtn: document.getElementById('clearRecruitBtn'),
             jobSelectGroup: document.getElementById('jobSelectGroup'),
             memberJob: document.getElementById('memberJob'),
             memberLevel: document.getElementById('memberLevel'),
@@ -202,17 +322,25 @@ const UI = {
         // Member form
         this.elements.memberForm.addEventListener('submit', (e) => this.saveMember(e));
 
-        // Recruit filters
-        if (this.elements.filterRace) {
-            this.elements.filterRace.addEventListener('change', () => this.onFilterChange());
+        // Recruit filter pills
+        if (this.elements.raceFilterPills) {
+            this.elements.raceFilterPills.addEventListener('click', (e) => {
+                if (e.target.classList.contains('filter-pill')) {
+                    this.onRaceFilterClick(e.target);
+                }
+            });
         }
-        if (this.elements.filterJob) {
-            this.elements.filterJob.addEventListener('change', () => this.onFilterChange());
+        if (this.elements.jobFilterPills) {
+            this.elements.jobFilterPills.addEventListener('click', (e) => {
+                if (e.target.classList.contains('filter-pill')) {
+                    this.onJobFilterClick(e.target);
+                }
+            });
         }
 
-        // Recruit selection change
-        if (this.elements.recruitSelect) {
-            this.elements.recruitSelect.addEventListener('change', () => this.onRecruitChange());
+        // Clear recruit button
+        if (this.elements.clearRecruitBtn) {
+            this.elements.clearRecruitBtn.addEventListener('click', () => this.clearRecruitSelection());
         }
 
         // Auto fill stats button
@@ -299,70 +427,6 @@ const UI = {
         // The rank is saved for reference when using "填入基礎值" button
     },
 
-    /**
-     * Handle filter change
-     */
-    onFilterChange() {
-        const raceFilter = this.elements.filterRace?.value || '';
-        const jobFilter = this.elements.filterJob?.value || '';
-        this.populateRecruitDropdown(raceFilter, jobFilter);
-        // Reset recruit info and job select
-        if (this.elements.recruitInfo) {
-            this.elements.recruitInfo.style.display = 'none';
-        }
-        if (this.elements.jobSelectGroup) {
-            this.elements.jobSelectGroup.style.display = 'none';
-        }
-        this.clearStatsInputs();
-    },
-
-    /**
-     * Handle recruit selection change
-     */
-    onRecruitChange() {
-        const recruitId = parseInt(this.elements.recruitSelect?.value);
-        if (!recruitId) {
-            if (this.elements.recruitInfo) {
-                this.elements.recruitInfo.style.display = 'none';
-            }
-            if (this.elements.jobSelectGroup) {
-                this.elements.jobSelectGroup.style.display = 'none';
-            }
-            this.clearStatsInputs();
-            return;
-        }
-
-        const recruit = GameData.getRecruit(recruitId);
-        if (!recruit) return;
-
-        // Show recruit info and job selector
-        if (this.elements.recruitInfo) {
-            this.elements.recruitInfo.style.display = 'block';
-        }
-        if (this.elements.jobSelectGroup) {
-            this.elements.jobSelectGroup.style.display = 'block';
-        }
-
-        const job = GameData.getJob(recruit.job);
-        const race = GameData.races[recruit.race];
-
-        if (this.elements.recruitOriginalJob) {
-            this.elements.recruitOriginalJob.textContent = job ? job.name : recruit.job;
-        }
-        if (this.elements.recruitRace) {
-            this.elements.recruitRace.textContent = race ? race.name : recruit.race;
-        }
-
-        // Set job dropdown to recruit's original job (only in add mode)
-        if (!this.editingMemberId && this.elements.memberJob) {
-            this.elements.memberJob.value = recruit.job;
-        }
-
-        // Auto-fill base stats when selecting a new recruit (only in add mode)
-        if (!this.editingMemberId) {
-            this.autoFillBaseStats();
-        }
-    },
 
     /**
      * Auto fill base stats based on selected job and level
@@ -513,15 +577,16 @@ const UI = {
         this.editingMemberId = memberId;
 
         // Reset filters
-        if (this.elements.filterRace) {
-            this.elements.filterRace.value = '';
-        }
-        if (this.elements.filterJob) {
-            this.elements.filterJob.value = '';
-        }
+        this.currentRaceFilter = '';
+        this.currentJobFilter = '';
 
-        // Populate dropdown
-        this.populateRecruitDropdown();
+        // Reset filter pills to "all"
+        this.elements.raceFilterPills?.querySelectorAll('.filter-pill').forEach(p => {
+            p.classList.toggle('active', p.dataset.race === '');
+        });
+        this.elements.jobFilterPills?.querySelectorAll('.filter-pill').forEach(p => {
+            p.classList.toggle('active', p.dataset.job === '');
+        });
 
         if (memberId) {
             // Edit mode
@@ -530,29 +595,26 @@ const UI = {
 
             this.elements.modalTitle.textContent = '編輯隊員';
 
-            if (member.recruitId && this.elements.recruitSelect) {
-                this.elements.recruitSelect.value = member.recruitId;
-                // Show recruit info and job selector
+            // Set selected recruit
+            if (this.elements.recruitSelect) {
+                this.elements.recruitSelect.value = member.recruitId || '';
+            }
+
+            // Populate grid and show selection
+            this.populateRecruitGrid();
+
+            // Show recruit preview
+            if (member.recruitId) {
                 const recruit = GameData.getRecruit(member.recruitId);
                 if (recruit) {
-                    if (this.elements.recruitInfo) {
-                        this.elements.recruitInfo.style.display = 'block';
-                    }
-                    if (this.elements.jobSelectGroup) {
-                        this.elements.jobSelectGroup.style.display = 'block';
-                    }
-                    const originalJob = GameData.getJob(recruit.job);
-                    const race = GameData.races[recruit.race];
-                    if (this.elements.recruitOriginalJob) {
-                        this.elements.recruitOriginalJob.textContent = originalJob ? originalJob.name : recruit.job;
-                    }
-                    if (this.elements.recruitRace) {
-                        this.elements.recruitRace.textContent = race ? race.name : recruit.race;
-                    }
+                    this.showSelectedRecruitPreview(recruit);
                 }
             }
 
-            // Set current job (may differ from original if job changed)
+            // Show job selector and set current job
+            if (this.elements.jobSelectGroup) {
+                this.elements.jobSelectGroup.style.display = member.recruitId ? 'block' : 'none';
+            }
             if (this.elements.memberJob) {
                 this.elements.memberJob.value = member.job;
             }
@@ -587,13 +649,16 @@ const UI = {
             if (this.elements.memberLevel) {
                 this.elements.memberLevel.value = 60;
             }
-            if (this.elements.recruitInfo) {
-                this.elements.recruitInfo.style.display = 'none';
+            if (this.elements.selectedRecruitPreview) {
+                this.elements.selectedRecruitPreview.style.display = 'none';
             }
             if (this.elements.jobSelectGroup) {
                 this.elements.jobSelectGroup.style.display = 'none';
             }
             this.clearStatsInputs();
+
+            // Populate grid
+            this.populateRecruitGrid();
 
             // Update submit button text
             const submitBtn = this.elements.memberForm.querySelector('button[type="submit"]');

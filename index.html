@@ -197,54 +197,48 @@
                     <button class="modal-close">&times;</button>
                 </div>
                 <form id="memberForm">
-                    <!-- Recruit Filter -->
-                    <div class="recruit-filters">
-                        <div class="filter-group">
-                            <label>篩選種族：</label>
-                            <select id="filterRace">
-                                <option value="">全部種族</option>
-                                <option value="hyur">人族</option>
-                                <option value="elezen">精靈族</option>
-                                <option value="lalafell">拉拉菲爾族</option>
-                                <option value="miqote">貓魅族</option>
-                                <option value="roegadyn">魯加族</option>
-                                <option value="aura">敖龍族</option>
-                            </select>
+                    <!-- Recruit Filter Pills -->
+                    <div class="recruit-filter-section">
+                        <div class="filter-pills" id="raceFilterPills">
+                            <button type="button" class="filter-pill active" data-race="">全部</button>
+                            <button type="button" class="filter-pill" data-race="hyur">人族</button>
+                            <button type="button" class="filter-pill" data-race="elezen">精靈</button>
+                            <button type="button" class="filter-pill" data-race="lalafell">拉拉菲</button>
+                            <button type="button" class="filter-pill" data-race="miqote">貓魅</button>
+                            <button type="button" class="filter-pill" data-race="roegadyn">魯加</button>
+                            <button type="button" class="filter-pill" data-race="aura">敖龍</button>
                         </div>
-                        <div class="filter-group">
-                            <label>篩選職業：</label>
-                            <select id="filterJob">
-                                <option value="">全部職業</option>
-                                <option value="gladiator">劍術士</option>
-                                <option value="marauder">斧術士</option>
-                                <option value="lancer">槍術士</option>
-                                <option value="pugilist">格鬥士</option>
-                                <option value="archer">弓術士</option>
-                                <option value="rogue">雙劍士</option>
-                                <option value="conjurer">幻術士</option>
-                                <option value="thaumaturge">咒術士</option>
-                                <option value="arcanist">巴術士</option>
-                            </select>
+                        <div class="filter-pills" id="jobFilterPills">
+                            <button type="button" class="filter-pill active" data-job="">全職業</button>
+                            <button type="button" class="filter-pill tank" data-job="gladiator">劍</button>
+                            <button type="button" class="filter-pill tank" data-job="marauder">斧</button>
+                            <button type="button" class="filter-pill healer" data-job="conjurer">幻</button>
+                            <button type="button" class="filter-pill dps" data-job="lancer">槍</button>
+                            <button type="button" class="filter-pill dps" data-job="pugilist">格</button>
+                            <button type="button" class="filter-pill dps" data-job="archer">弓</button>
+                            <button type="button" class="filter-pill dps" data-job="rogue">雙</button>
+                            <button type="button" class="filter-pill dps" data-job="thaumaturge">咒</button>
+                            <button type="button" class="filter-pill dps" data-job="arcanist">巴</button>
                         </div>
                     </div>
-                    <!-- Recruit Selector -->
-                    <div class="form-group">
-                        <label for="recruitSelect">選擇隊員</label>
-                        <select id="recruitSelect" required>
-                            <option value="">-- 選擇隊員 --</option>
-                            <!-- Options will be populated by JS -->
-                        </select>
+                    <!-- Visual Recruit Grid -->
+                    <div class="recruit-grid-container">
+                        <div id="recruitGrid" class="recruit-grid">
+                            <!-- Recruit cards will be populated by JS -->
+                        </div>
                     </div>
-                    <!-- Selected Recruit Info -->
-                    <div id="recruitInfo" class="recruit-info" style="display: none;">
-                        <div class="recruit-detail">
-                            <span class="label">種族：</span>
-                            <span id="recruitRace">-</span>
+                    <!-- Hidden input for selected recruit -->
+                    <input type="hidden" id="recruitSelect" required>
+                    <!-- Selected Recruit Preview -->
+                    <div id="selectedRecruitPreview" class="selected-recruit-preview" style="display: none;">
+                        <img id="selectedRecruitImg" src="" alt="">
+                        <div class="selected-recruit-info">
+                            <div class="selected-recruit-name" id="selectedRecruitName">-</div>
+                            <div class="selected-recruit-details">
+                                <span id="recruitRace">-</span> · <span id="recruitOriginalJob">-</span>
+                            </div>
                         </div>
-                        <div class="recruit-detail">
-                            <span class="label">原職業：</span>
-                            <span id="recruitOriginalJob">-</span>
-                        </div>
+                        <button type="button" id="clearRecruitBtn" class="btn btn-small btn-secondary">清除</button>
                     </div>
                     <!-- Job Selection -->
                     <div class="form-group" id="jobSelectGroup" style="display: none;">
