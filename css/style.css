@@ -81,6 +81,70 @@ body {
     font-size: 0.9rem;
 }
 
+/* Header Navigation */
+.header-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.nav-right {
+    display: flex;
+    gap: 10px;
+}
+
+.nav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    transition: var(--transition);
+    border: 1px solid var(--border-light);
+}
+
+.nav-btn:hover {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border-color: var(--accent);
+}
+
+.nav-btn.discord:hover {
+    border-color: #5865F2;
+    color: #5865F2;
+}
+
+.nav-btn.support:hover {
+    border-color: var(--accent-gold);
+    color: var(--accent-gold);
+}
+
+.nav-icon {
+    font-size: 1rem;
+}
+
+@media (max-width: 600px) {
+    .header-nav {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .nav-right {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .nav-btn {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+    }
+}
+
 /* Main Content Layout */
 .main-content {
     display: grid;
