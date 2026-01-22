@@ -9,7 +9,6 @@ const UI = {
     selectedMemberIds: [],
     editingMemberId: null,
     squadRank: 3,
-    selectedTrainingType: null,
 
     // DOM element references
     elements: {},
@@ -289,11 +288,12 @@ const UI = {
             importExportData: document.getElementById('importExportData'),
             confirmImport: document.getElementById('confirmImport'),
 
-            // Training panel
-            toggleTraining: document.getElementById('toggleTraining'),
-            trainingContent: document.getElementById('trainingContent'),
-            trainingPreview: document.getElementById('trainingPreview'),
-            applyTraining: document.getElementById('applyTraining')
+            // Recruits list modal
+            viewRecruitsBtn: document.getElementById('viewRecruitsBtn'),
+            recruitsListModal: document.getElementById('recruitsListModal'),
+            recruitsTableBody: document.getElementById('recruitsTableBody'),
+            recruitsRaceFilter: document.getElementById('recruitsRaceFilter'),
+            recruitsChallengeFilter: document.getElementById('recruitsChallengeFilter')
         };
     },
 
@@ -366,16 +366,18 @@ const UI = {
         // Import confirm
         this.elements.confirmImport.addEventListener('click', () => this.confirmImport());
 
-        // Training panel toggle
-        this.elements.toggleTraining.addEventListener('click', () => this.toggleTrainingPanel());
+        // View recruits button
+        if (this.elements.viewRecruitsBtn) {
+            this.elements.viewRecruitsBtn.addEventListener('click', () => this.openRecruitsListModal());
+        }
 
-        // Training type buttons
-        document.querySelectorAll('.training-type-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => this.selectTrainingType(e.target.dataset.type));
-        });
-
-        // Apply training button
-        this.elements.applyTraining.addEventListener('click', () => this.applyTraining());
+        // Recruits list filters
+        if (this.elements.recruitsRaceFilter) {
+            this.elements.recruitsRaceFilter.addEventListener('change', () => this.renderRecruitsTable());
+        }
+        if (this.elements.recruitsChallengeFilter) {
+            this.elements.recruitsChallengeFilter.addEventListener('change', () => this.renderRecruitsTable());
+        }
 
         // Close modal on outside click
         document.querySelectorAll('.modal').forEach(modal => {
@@ -496,12 +498,14 @@ const UI = {
             const roleClass = job ? GameData.getRoleClass(job.role) : 'dps';
             const isSelected = this.selectedMemberIds.includes(member.id);
 
-            // Get recruit name if available
+            // Get recruit name and image if available
             let displayName = member.name;
+            let recruitImgUrl = 'images/recruits/default.png';
             if (member.recruitId) {
                 const recruit = GameData.getRecruit(member.recruitId);
                 if (recruit) {
                     displayName = recruit.name;
+                    recruitImgUrl = GameData.getRecruitImageUrl(recruit);
                 }
             }
 
@@ -511,7 +515,9 @@ const UI = {
 
             return `
                 <div class="member-card ${isSelected ? 'selected' : ''}" data-id="${member.id}">
-                    <div class="job-icon ${roleClass}">${job ? job.abbr : '?'}</div>
+                    <div class="member-avatar ${roleClass}">
+                        <img src="${recruitImgUrl}" alt="${this.escapeHtml(displayName)}" onerror="this.src='images/recruits/default.png'">
+                    </div>
                     <div class="member-info">
                         <div class="name">${this.escapeHtml(displayName)}</div>
                         <div class="job-level">${job ? job.name : '未知'}${jobChangedIndicator} Lv.${member.level}</div>
@@ -567,7 +573,6 @@ const UI = {
             this.selectedMemberIds.splice(index, 1);
         }
         this.renderMemberList();
-        this.updateTrainingPreview();
     },
 
     /**
@@ -877,19 +882,32 @@ const UI = {
                     <div class="result-members">
                         ${result.members.map(m => {
                             const job = GameData.getJob(m.job);
+                            const roleClass = job ? GameData.getRoleClass(job.role) : 'dps';
                             // Check if job changed in this result
                             const suggestedJob = result.jobChanges?.find(jc => jc.memberId === m.id);
                             const displayJob = suggestedJob ? GameData.getJob(suggestedJob.to) : job;
-                            // Get recruit name if available
+                            // Get recruit info
                             let displayName = m.name;
+                            let imgUrl = 'images/recruits/default.png';
                             if (m.recruitId) {
                                 const recruit = GameData.getRecruit(m.recruitId);
                                 if (recruit) {
                                     displayName = recruit.name;
+                                    imgUrl = GameData.getRecruitImageUrl(recruit);
                                 }
                             }
                             const jobChangedClass = suggestedJob ? 'job-changed' : '';
-                            return `<span class="result-member ${jobChangedClass}">${this.escapeHtml(displayName)} (${displayJob ? displayJob.name : '?'})</span>`;
+                            return `
+                                <div class="result-member-card ${jobChangedClass}">
+                                    <div class="result-member-avatar ${roleClass}">
+                                        <img src="${imgUrl}" alt="${this.escapeHtml(displayName)}" onerror="this.src='images/recruits/default.png'">
+                                    </div>
+                                    <div class="result-member-info">
+                                        <span class="result-member-name">${this.escapeHtml(displayName)}</span>
+                                        <span class="result-member-job">${displayJob ? displayJob.name : '?'}</span>
+                                    </div>
+                                </div>
+                            `;
                         }).join('')}
                     </div>
                     <div class="result-stats">
@@ -920,111 +938,6 @@ const UI = {
                 </div>
             `;
         }).join('');
-    },
-
-    /**
-     * Toggle training panel
-     */
-    toggleTrainingPanel() {
-        const content = this.elements.trainingContent;
-        const isExpanded = content.classList.contains('expanded');
-
-        if (isExpanded) {
-            content.classList.remove('expanded');
-            this.elements.toggleTraining.textContent = '▼';
-        } else {
-            content.classList.add('expanded');
-            this.elements.toggleTraining.textContent = '▲';
-        }
-    },
-
-    /**
-     * Select training type
-     */
-    selectTrainingType(type) {
-        // Update button states
-        document.querySelectorAll('.training-type-btn').forEach(btn => {
-            btn.classList.toggle('selected', btn.dataset.type === type);
-        });
-
-        this.selectedTrainingType = type;
-        Training.setTrainingType(type);
-        this.updateTrainingPreview();
-    },
-
-    /**
-     * Update training preview
-     */
-    updateTrainingPreview() {
-        const type = Training.getTrainingType();
-        const selectedMembers = this.members.filter(m => this.selectedMemberIds.includes(m.id));
-
-        Training.setSelectedMembers(selectedMembers);
-
-        if (!type || selectedMembers.length === 0) {
-            this.elements.trainingPreview.innerHTML = `
-                <p class="placeholder-text">
-                    ${!type ? '選擇訓練類型' : '選擇要訓練的隊員'}
-                </p>
-            `;
-            this.elements.applyTraining.disabled = true;
-            return;
-        }
-
-        const preview = Training.previewTraining(type);
-        if (!preview) {
-            this.elements.applyTraining.disabled = true;
-            return;
-        }
-
-        const formatChange = (val) => {
-            const sign = val > 0 ? '+' : '';
-            const className = val > 0 ? 'positive' : val < 0 ? 'negative' : '';
-            return `<span class="change ${className}">${sign}${val}</span>`;
-        };
-
-        this.elements.trainingPreview.innerHTML = `
-            <div class="preview-stats">
-                <div class="preview-stat">
-                    <span class="label">體能</span>
-                    ${formatChange(preview.effect.physical)}
-                </div>
-                <div class="preview-stat">
-                    <span class="label">心智</span>
-                    ${formatChange(preview.effect.mental)}
-                </div>
-                <div class="preview-stat">
-                    <span class="label">戰術</span>
-                    ${formatChange(preview.effect.tactical)}
-                </div>
-            </div>
-            <p style="margin-top:10px;font-size:0.8rem;color:var(--text-muted)">
-                訓練會影響全體 8 名隊員
-            </p>
-        `;
-
-        this.elements.applyTraining.disabled = false;
-    },
-
-    /**
-     * Apply training to selected members
-     */
-    applyTraining() {
-        const type = Training.getTrainingType();
-        const selectedMembers = this.members.filter(m => this.selectedMemberIds.includes(m.id));
-
-        if (!type || selectedMembers.length === 0) return;
-
-        if (!confirm(`確定要對 ${selectedMembers.length} 名隊員進行「${GameData.getTraining(type).name}」訓練？`)) {
-            return;
-        }
-
-        Training.applyTraining(type, selectedMembers);
-
-        // Reload members from storage to get updated values
-        this.loadMembers();
-        this.render();
-        this.updateTrainingPreview();
     },
 
     /**
@@ -1073,6 +986,65 @@ const UI = {
         } else {
             alert('匯入失敗，請檢查資料格式');
         }
+    },
+
+    /**
+     * Open recruits list modal
+     */
+    openRecruitsListModal() {
+        // Reset filters
+        if (this.elements.recruitsRaceFilter) {
+            this.elements.recruitsRaceFilter.value = '';
+        }
+        if (this.elements.recruitsChallengeFilter) {
+            this.elements.recruitsChallengeFilter.value = '';
+        }
+
+        this.renderRecruitsTable();
+        this.elements.recruitsListModal.classList.add('active');
+    },
+
+    /**
+     * Render recruits table
+     */
+    renderRecruitsTable() {
+        const raceFilter = this.elements.recruitsRaceFilter?.value || '';
+        const challengeFilter = this.elements.recruitsChallengeFilter?.value || '';
+
+        let recruits = GameData.getAllRecruits();
+
+        // Apply filters
+        if (raceFilter) {
+            recruits = recruits.filter(r => r.race === raceFilter);
+        }
+        if (challengeFilter) {
+            recruits = recruits.filter(r => r.challengeLog && r.challengeLog.includes(challengeFilter));
+        }
+
+        this.elements.recruitsTableBody.innerHTML = recruits.map(recruit => {
+            const job = GameData.getJob(recruit.job);
+            const race = GameData.races[recruit.race];
+            const imgUrl = GameData.getRecruitImageUrl(recruit);
+            const genderIcon = recruit.gender === 'M' ? '♂' : '♀';
+            const roleClass = job ? GameData.getRoleClass(job.role) : 'dps';
+
+            return `
+                <tr>
+                    <td class="recruit-img-cell">
+                        <img src="${imgUrl}" alt="${this.escapeHtml(recruit.name)}"
+                             class="recruit-table-img" onerror="this.src='images/recruits/default.png'">
+                    </td>
+                    <td>
+                        <div class="recruit-name">${this.escapeHtml(recruit.name)}</div>
+                        <div class="recruit-name-en">${this.escapeHtml(recruit.nameEn)}</div>
+                    </td>
+                    <td>${race ? race.name : recruit.race}</td>
+                    <td>${genderIcon}</td>
+                    <td><span class="job-badge ${roleClass}">${job ? job.name : recruit.job}</span></td>
+                    <td class="challenge-log-cell">${this.escapeHtml(recruit.challengeLog || '-')}</td>
+                </tr>
+            `;
+        }).join('');
     },
 
     /**

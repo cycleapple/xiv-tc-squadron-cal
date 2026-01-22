@@ -187,10 +187,17 @@ body {
 
 .panel-footer {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     margin-top: 15px;
     padding-top: 15px;
     border-top: 1px solid var(--border-color);
+}
+
+.panel-footer .btn {
+    flex: 1 1 auto;
+    min-width: 0;
+    text-align: center;
 }
 
 /* Mission Panel */
@@ -348,6 +355,27 @@ body {
 .job-icon.dps { background: linear-gradient(135deg, #a13d3d, #8b2c2c); }
 .job-icon.healer { background: linear-gradient(135deg, #3d8b3d, #2d6b2d); }
 .job-icon.ranged { background: linear-gradient(135deg, #a17a3d, #8b6930); }
+
+/* Member Avatar (recruit image) */
+.member-card .member-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    border: 2px solid var(--border-color);
+}
+
+.member-card .member-avatar.tank { border-color: #3a6ea5; }
+.member-card .member-avatar.dps { border-color: #a13d3d; }
+.member-card .member-avatar.healer { border-color: #3d8b3d; }
+.member-card .member-avatar.ranged { border-color: #a17a3d; }
+
+.member-card .member-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
 
 .member-info .name {
     font-weight: 600;
@@ -549,17 +577,60 @@ body {
 
 .result-members {
     display: flex;
-    gap: 6px;
+    gap: 10px;
     flex-wrap: wrap;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
 }
 
-.result-member {
+.result-member-card {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     background: var(--bg-secondary);
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.8rem;
+    padding: 6px 10px;
+    border-radius: 6px;
     border: 1px solid var(--border-color);
+}
+
+.result-member-card.job-changed {
+    border: 1px dashed var(--warning);
+}
+
+.result-member-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    border: 2px solid var(--border-color);
+}
+
+.result-member-avatar.tank { border-color: #3a6ea5; }
+.result-member-avatar.dps { border-color: #a13d3d; }
+.result-member-avatar.healer { border-color: #3d8b3d; }
+.result-member-avatar.ranged { border-color: #a17a3d; }
+
+.result-member-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.result-member-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.result-member-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.result-member-job {
+    font-size: 0.75rem;
+    color: var(--text-muted);
 }
 
 .result-stats {
@@ -1200,10 +1271,6 @@ body {
     color: var(--warning);
 }
 
-.result-member.job-changed {
-    border: 1px dashed var(--warning);
-}
-
 /* ==================== Footer ==================== */
 .app-footer {
     text-align: center;
@@ -1281,6 +1348,122 @@ body {
 
 @keyframes spin {
     to { transform: rotate(360deg); }
+}
+
+/* ==================== Recruits List Table ==================== */
+.modal-large {
+    max-width: 900px;
+    width: 95%;
+}
+
+.recruits-filter-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.recruits-filter-bar select {
+    padding: 8px 12px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.recruits-table-container {
+    max-height: 60vh;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+}
+
+.recruits-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.recruits-table thead {
+    position: sticky;
+    top: 0;
+    background: var(--bg-tertiary);
+    z-index: 1;
+}
+
+.recruits-table th,
+.recruits-table td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.recruits-table th {
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.recruits-table tbody tr:hover {
+    background: var(--bg-card-hover);
+}
+
+.recruit-img-cell {
+    width: 50px;
+}
+
+.recruit-table-img {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--border-color);
+}
+
+.recruit-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.recruit-name-en {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.job-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.job-badge.tank {
+    background: rgba(58, 110, 165, 0.3);
+    color: #6aa8e0;
+}
+
+.job-badge.dps {
+    background: rgba(161, 61, 61, 0.3);
+    color: #e07a7a;
+}
+
+.job-badge.healer {
+    background: rgba(61, 139, 61, 0.3);
+    color: #7acc7a;
+}
+
+.job-badge.ranged {
+    background: rgba(161, 122, 61, 0.3);
+    color: #d4a85a;
+}
+
+.challenge-log-cell {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
 }
 
 /* ==================== Responsive ==================== */

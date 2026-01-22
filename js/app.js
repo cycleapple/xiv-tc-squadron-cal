@@ -25,10 +25,6 @@
             console.error('Calculator not loaded');
             return;
         }
-        if (typeof Training === 'undefined') {
-            console.error('Training not loaded');
-            return;
-        }
         if (typeof UI === 'undefined') {
             console.error('UI not loaded');
             return;
@@ -118,7 +114,6 @@
         GameData,
         Storage,
         Calculator,
-        Training,
         UI
     };
 })();
