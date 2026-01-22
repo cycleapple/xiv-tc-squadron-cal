@@ -79,9 +79,30 @@
                     <label for="squadRank">小隊階級：</label>
                     <select id="squadRank">
                         <option value="1">一級 (上限 200)</option>
-                        <option value="2">二級 (上限 300)</option>
+                        <option value="2">二級 (上限 280)</option>
                         <option value="3" selected>三級 (上限 400)</option>
                     </select>
+                </div>
+                <!-- Training Pool (Chemistry) -->
+                <div class="training-pool-setting">
+                    <div class="training-pool-header">
+                        <label>訓練屬性池：</label>
+                        <span id="trainingPoolTotal" class="pool-total">0 / 400</span>
+                    </div>
+                    <div class="training-pool-inputs">
+                        <div class="pool-input">
+                            <span class="stat-icon physical"></span>
+                            <input type="number" id="poolPhysical" min="0" max="400" value="0">
+                        </div>
+                        <div class="pool-input">
+                            <span class="stat-icon mental"></span>
+                            <input type="number" id="poolMental" min="0" max="400" value="0">
+                        </div>
+                        <div class="pool-input">
+                            <span class="stat-icon tactical"></span>
+                            <input type="number" id="poolTactical" min="0" max="400" value="0">
+                        </div>
+                    </div>
                 </div>
                 <div id="memberList" class="member-list">
                     <!-- Member cards will be generated here -->
@@ -122,22 +143,19 @@
                         </div>
                     </div>
 
-                    <div class="preset-missions">
-                        <label>快速選擇：</label>
-                        <select id="presetMissions">
-                            <option value="">-- 選擇預設任務 --</option>
-                            <optgroup label="階級任務">
-                                <option value="280,280,280">均衡型 (280/280/280)</option>
-                                <option value="400,200,200">物理型 (400/200/200)</option>
-                                <option value="200,400,200">精神型 (200/400/200)</option>
-                                <option value="200,200,400">戰術型 (200/200/400)</option>
-                            </optgroup>
-                            <optgroup label="特殊任務">
-                                <option value="305,275,275">物理偏重 (305/275/275)</option>
-                                <option value="275,305,275">精神偏重 (275/305/275)</option>
-                                <option value="275,275,305">戰術偏重 (275/275/305)</option>
-                            </optgroup>
-                        </select>
+                    <div class="mission-selection">
+                        <div class="mission-select-group">
+                            <label>選擇任務：</label>
+                            <select id="presetMissions">
+                                <option value="">-- 選擇任務 --</option>
+                            </select>
+                        </div>
+                        <div class="mission-variant-group" id="variantGroup" style="display: none;">
+                            <label>當週配置：</label>
+                            <select id="missionVariant">
+                                <option value="0">-- 選擇配置 --</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="calc-options" style="display: none;">

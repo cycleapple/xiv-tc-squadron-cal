@@ -135,17 +135,25 @@ const Calculator = {
      * @param {Object} requirements - Required stats
      * @returns {Array} Sorted array of results
      */
-    analyzeAllCombinations(members, requirements) {
+    analyzeAllCombinations(members, requirements, trainingPool = { physical: 0, mental: 0, tactical: 0 }) {
         const combinations = this.getCombinations(members);
         const results = [];
 
         for (const combo of combinations) {
-            const currentStats = this.calculateGroupStats(combo);
+            const memberStats = this.calculateGroupStats(combo);
+            // Add training pool to member stats
+            const currentStats = {
+                physical: memberStats.physical + trainingPool.physical,
+                mental: memberStats.mental + trainingPool.mental,
+                tactical: memberStats.tactical + trainingPool.tactical
+            };
             const difference = this.calculateDifference(currentStats, requirements);
 
             const result = {
                 members: combo,
                 currentStats,
+                memberStats, // Store original member stats without pool
+                trainingPool,
                 difference,
                 meetsRequirements: this.meetsRequirements(currentStats, requirements),
                 trainingSolution: null,
@@ -190,9 +198,9 @@ const Calculator = {
      * @returns {Array} Top results
      */
     getTopResults(members, requirements, limit = 5, options = {}) {
-        const { considerJobChange = false, squadRank = 3 } = options;
+        const { considerJobChange = false, squadRank = 3, trainingPool = { physical: 0, mental: 0, tactical: 0 } } = options;
 
-        let allResults = this.analyzeAllCombinations(members, requirements);
+        let allResults = this.analyzeAllCombinations(members, requirements, trainingPool);
 
         // If considering job changes, find additional solutions with job changes
         if (considerJobChange) {

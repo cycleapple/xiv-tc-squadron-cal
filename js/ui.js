@@ -25,6 +25,9 @@ const UI = {
         this.render();
     },
 
+    // Currently selected mission ID
+    selectedMissionId: null,
+
     /**
      * Populate mission selector with game data
      */
@@ -38,24 +41,35 @@ const UI = {
         customGroup.innerHTML = '<option value="custom">手動輸入數值...</option>';
         select.appendChild(customGroup);
 
+        // Add unlock missions - 解鎖任務（固定數值）
+        const unlockGroup = document.createElement('optgroup');
+        unlockGroup.label = '解鎖任務 (固定)';
+        GameData.missions.unlock.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = `mission:${m.id}`;
+            opt.textContent = `${m.name} (${m.physical}/${m.mental}/${m.tactical}) ★`;
+            unlockGroup.appendChild(opt);
+        });
+        select.appendChild(unlockGroup);
+
         // Add trainee missions - 簡單任務
         const traineeGroup = document.createElement('optgroup');
-        traineeGroup.label = '簡單任務 (Lv1-20)';
+        traineeGroup.label = '簡單任務 (Lv1-15)';
         GameData.missions.trainee.forEach(m => {
             const opt = document.createElement('option');
-            opt.value = `${m.physical},${m.mental},${m.tactical}`;
-            opt.textContent = `${m.name} (${m.physical}/${m.mental}/${m.tactical})${m.flagged ? ' ★' : ''}`;
+            opt.value = `mission:${m.id}`;
+            opt.textContent = `${m.name} (Lv${m.level})`;
             traineeGroup.appendChild(opt);
         });
         select.appendChild(traineeGroup);
 
         // Add routine missions - 普通任務
         const routineGroup = document.createElement('optgroup');
-        routineGroup.label = '普通任務 (Lv20-40)';
+        routineGroup.label = '普通任務 (Lv20-35)';
         GameData.missions.routine.forEach(m => {
             const opt = document.createElement('option');
-            opt.value = `${m.physical},${m.mental},${m.tactical}`;
-            opt.textContent = `${m.name} (${m.physical}/${m.mental}/${m.tactical})${m.flagged ? ' ★' : ''}`;
+            opt.value = `mission:${m.id}`;
+            opt.textContent = `${m.name} (Lv${m.level})`;
             routineGroup.appendChild(opt);
         });
         select.appendChild(routineGroup);
@@ -65,11 +79,80 @@ const UI = {
         priorityGroup.label = '特殊任務 (Lv40-50)';
         GameData.missions.priority.forEach(m => {
             const opt = document.createElement('option');
-            opt.value = `${m.physical},${m.mental},${m.tactical}`;
-            opt.textContent = `${m.name} (${m.physical}/${m.mental}/${m.tactical})`;
+            opt.value = `mission:${m.id}`;
+            opt.textContent = `${m.name} (Lv${m.level})`;
             priorityGroup.appendChild(opt);
         });
         select.appendChild(priorityGroup);
+    },
+
+    /**
+     * Handle mission selection change
+     */
+    onMissionSelect(value) {
+        const variantGroup = this.elements.variantGroup;
+        const variantSelect = this.elements.missionVariant;
+
+        if (!value || value === 'custom') {
+            // Custom input mode - hide variant selector
+            if (variantGroup) variantGroup.style.display = 'none';
+            this.selectedMissionId = null;
+            return;
+        }
+
+        // Parse mission ID
+        if (value.startsWith('mission:')) {
+            const missionId = parseInt(value.replace('mission:', ''));
+            this.selectedMissionId = missionId;
+
+            const variants = GameData.getMissionVariants(missionId);
+            if (!variants || variants.length === 0) return;
+
+            // If only one variant (fixed mission), hide selector and apply directly
+            if (variants.length === 1) {
+                if (variantGroup) variantGroup.style.display = 'none';
+                this.applyMissionVariant(variants[0]);
+                return;
+            }
+
+            // Multiple variants - show selector
+            if (variantGroup) variantGroup.style.display = 'block';
+
+            // Populate variant options
+            variantSelect.innerHTML = variants.map((v, i) =>
+                `<option value="${i}">${v.label}</option>`
+            ).join('');
+
+            // Apply first variant by default
+            this.applyMissionVariant(variants[0]);
+        }
+    },
+
+    /**
+     * Handle variant selection change
+     */
+    onVariantSelect(variantIndex) {
+        if (this.selectedMissionId === null) return;
+
+        const variants = GameData.getMissionVariants(this.selectedMissionId);
+        if (!variants || !variants[variantIndex]) return;
+
+        this.applyMissionVariant(variants[variantIndex]);
+    },
+
+    /**
+     * Apply mission variant to requirement inputs
+     */
+    applyMissionVariant(variant) {
+        if (this.elements.reqPhysical) {
+            this.elements.reqPhysical.value = variant.physical;
+        }
+        if (this.elements.reqMental) {
+            this.elements.reqMental.value = variant.mental;
+        }
+        if (this.elements.reqTactical) {
+            this.elements.reqTactical.value = variant.tactical;
+        }
     },
 
     // Current filter state
@@ -258,6 +341,8 @@ const UI = {
             reqMental: document.getElementById('reqMental'),
             reqTactical: document.getElementById('reqTactical'),
             presetMissions: document.getElementById('presetMissions'),
+            variantGroup: document.getElementById('variantGroup'),
+            missionVariant: document.getElementById('missionVariant'),
 
             // Member modal - visual recruit selection
             memberModal: document.getElementById('memberModal'),
@@ -293,7 +378,13 @@ const UI = {
             recruitsListModal: document.getElementById('recruitsListModal'),
             recruitsTableBody: document.getElementById('recruitsTableBody'),
             recruitsRaceFilter: document.getElementById('recruitsRaceFilter'),
-            recruitsChallengeFilter: document.getElementById('recruitsChallengeFilter')
+            recruitsChallengeFilter: document.getElementById('recruitsChallengeFilter'),
+
+            // Training pool
+            poolPhysical: document.getElementById('poolPhysical'),
+            poolMental: document.getElementById('poolMental'),
+            poolTactical: document.getElementById('poolTactical'),
+            trainingPoolTotal: document.getElementById('trainingPoolTotal')
         };
     },
 
@@ -316,8 +407,20 @@ const UI = {
             this.elements.squadRank.addEventListener('change', (e) => this.onSquadRankChange(e.target.value));
         }
 
-        // Preset missions
-        this.elements.presetMissions.addEventListener('change', (e) => this.loadPresetMission(e.target.value));
+        // Training pool inputs
+        ['poolPhysical', 'poolMental', 'poolTactical'].forEach(id => {
+            if (this.elements[id]) {
+                this.elements[id].addEventListener('input', () => this.updateTrainingPoolTotal());
+            }
+        });
+
+        // Mission selection
+        this.elements.presetMissions.addEventListener('change', (e) => this.onMissionSelect(e.target.value));
+
+        // Mission variant selection
+        if (this.elements.missionVariant) {
+            this.elements.missionVariant.addEventListener('change', (e) => this.onVariantSelect(parseInt(e.target.value)));
+        }
 
         // Member form
         this.elements.memberForm.addEventListener('submit', (e) => this.saveMember(e));
@@ -351,10 +454,14 @@ const UI = {
         // Job change in modal
         if (this.elements.memberJob) {
             this.elements.memberJob.addEventListener('change', () => {
-                // Optionally auto-fill stats when job changes (only if adding new member)
-                if (!this.editingMemberId) {
-                    this.autoFillBaseStats();
-                }
+                this.autoFillBaseStats();
+            });
+        }
+
+        // Level change in modal - auto update stats
+        if (this.elements.memberLevel) {
+            this.elements.memberLevel.addEventListener('change', () => {
+                this.autoFillBaseStats();
             });
         }
 
@@ -425,10 +532,40 @@ const UI = {
     onSquadRankChange(value) {
         this.squadRank = parseInt(value) || 3;
         this.saveSettings();
-        // Note: We don't auto-recalculate stats because users input their actual stats
-        // The rank is saved for reference when using "填入基礎值" button
+        this.updateTrainingPoolTotal();
     },
 
+    /**
+     * Update training pool total display
+     */
+    updateTrainingPoolTotal() {
+        const physical = parseInt(this.elements.poolPhysical?.value) || 0;
+        const mental = parseInt(this.elements.poolMental?.value) || 0;
+        const tactical = parseInt(this.elements.poolTactical?.value) || 0;
+        const total = physical + mental + tactical;
+        const cap = GameData.rankCaps[this.squadRank] || 400;
+
+        if (this.elements.trainingPoolTotal) {
+            this.elements.trainingPoolTotal.textContent = `${total} / ${cap}`;
+            this.elements.trainingPoolTotal.classList.remove('over', 'valid');
+            if (total > cap) {
+                this.elements.trainingPoolTotal.classList.add('over');
+            } else if (total === cap) {
+                this.elements.trainingPoolTotal.classList.add('valid');
+            }
+        }
+    },
+
+    /**
+     * Get training pool values
+     */
+    getTrainingPool() {
+        return {
+            physical: parseInt(this.elements.poolPhysical?.value) || 0,
+            mental: parseInt(this.elements.poolMental?.value) || 0,
+            tactical: parseInt(this.elements.poolTactical?.value) || 0
+        };
+    },
 
     /**
      * Auto fill base stats based on selected job and level
@@ -805,10 +942,12 @@ const UI = {
         this.elements.resultsContainer.innerHTML = '<div class="loading"></div>';
 
         // Calculate in next tick to allow UI update
+        const trainingPool = this.getTrainingPool();
         setTimeout(() => {
             const results = Calculator.getTopResults(this.members, requirements, 5, {
                 considerJobChange: considerJobChange,
-                squadRank: this.squadRank
+                squadRank: this.squadRank,
+                trainingPool: trainingPool
             });
             this.renderResults(results, requirements, considerJobChange);
         }, 50);
