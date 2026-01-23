@@ -384,7 +384,15 @@ const UI = {
             poolPhysical: document.getElementById('poolPhysical'),
             poolMental: document.getElementById('poolMental'),
             poolTactical: document.getElementById('poolTactical'),
-            trainingPoolTotal: document.getElementById('trainingPoolTotal')
+            trainingPoolTotal: document.getElementById('trainingPoolTotal'),
+
+            // Chemistry (吉兆)
+            hasChemistry: document.getElementById('hasChemistry'),
+            chemistrySettings: document.getElementById('chemistrySettings'),
+            chemistryCondition: document.getElementById('chemistryCondition'),
+            chemistryEffect: document.getElementById('chemistryEffect'),
+            chemistryValue: document.getElementById('chemistryValue'),
+            chemistryPreview: document.getElementById('chemistryPreview')
         };
     },
 
@@ -463,6 +471,31 @@ const UI = {
             this.elements.memberLevel.addEventListener('change', () => {
                 this.autoFillBaseStats();
             });
+        }
+
+        // Chemistry toggle
+        if (this.elements.hasChemistry) {
+            this.elements.hasChemistry.addEventListener('change', (e) => {
+                this.toggleChemistrySettings(e.target.checked);
+            });
+        }
+
+        // Chemistry condition change
+        if (this.elements.chemistryCondition) {
+            this.elements.chemistryCondition.addEventListener('change', () => this.updateChemistryPreview());
+        }
+
+        // Chemistry effect change
+        if (this.elements.chemistryEffect) {
+            this.elements.chemistryEffect.addEventListener('change', () => {
+                this.populateChemistryValues();
+                this.updateChemistryPreview();
+            });
+        }
+
+        // Chemistry value change
+        if (this.elements.chemistryValue) {
+            this.elements.chemistryValue.addEventListener('change', () => this.updateChemistryPreview());
         }
 
         // Modal close buttons
@@ -608,6 +641,146 @@ const UI = {
         }
     },
 
+    // ==================== Chemistry Functions ====================
+
+    /**
+     * Populate chemistry condition dropdown
+     */
+    populateChemistryConditions() {
+        const select = this.elements.chemistryCondition;
+        if (!select) return;
+
+        const conditions = GameData.getAllChemistryConditions();
+        select.innerHTML = conditions.map(cond =>
+            `<option value="${cond.key}">${cond.name}</option>`
+        ).join('');
+    },
+
+    /**
+     * Populate chemistry effect dropdown
+     */
+    populateChemistryEffects() {
+        const select = this.elements.chemistryEffect;
+        if (!select) return;
+
+        const effects = GameData.getAllChemistryEffects();
+        select.innerHTML = effects.map(eff =>
+            `<option value="${eff.key}">${eff.desc}</option>`
+        ).join('');
+    },
+
+    /**
+     * Populate chemistry value dropdown based on selected effect
+     */
+    populateChemistryValues() {
+        const select = this.elements.chemistryValue;
+        const effectKey = this.elements.chemistryEffect?.value;
+        if (!select || !effectKey) return;
+
+        const effect = GameData.getChemistryEffect(effectKey);
+        if (!effect) return;
+
+        select.innerHTML = effect.values.map((val, idx) =>
+            `<option value="${idx}">${val}%</option>`
+        ).join('');
+    },
+
+    /**
+     * Toggle chemistry settings visibility
+     */
+    toggleChemistrySettings(show) {
+        if (this.elements.chemistrySettings) {
+            this.elements.chemistrySettings.style.display = show ? 'block' : 'none';
+        }
+        if (show && !this.elements.chemistryCondition?.options.length) {
+            this.populateChemistryConditions();
+            this.populateChemistryEffects();
+            this.populateChemistryValues();
+        }
+        this.updateChemistryPreview();
+    },
+
+    /**
+     * Update chemistry preview text
+     */
+    updateChemistryPreview() {
+        const preview = this.elements.chemistryPreview;
+        if (!preview) return;
+
+        if (!this.elements.hasChemistry?.checked) {
+            preview.textContent = '';
+            return;
+        }
+
+        const condKey = this.elements.chemistryCondition?.value;
+        const effectKey = this.elements.chemistryEffect?.value;
+        const valueIdx = parseInt(this.elements.chemistryValue?.value) || 0;
+
+        const chemistry = { condition: condKey, effect: effectKey, value: valueIdx };
+        const formatted = GameData.formatChemistry(chemistry);
+
+        preview.textContent = formatted || '';
+    },
+
+    /**
+     * Get chemistry data from form
+     */
+    getChemistryFromForm() {
+        if (!this.elements.hasChemistry?.checked) return null;
+
+        return {
+            condition: this.elements.chemistryCondition?.value || '',
+            effect: this.elements.chemistryEffect?.value || '',
+            value: parseInt(this.elements.chemistryValue?.value) || 0
+        };
+    },
+
+    /**
+     * Set chemistry data in form
+     */
+    setChemistryInForm(chemistry) {
+        // Ensure dropdowns are populated
+        if (!this.elements.chemistryCondition?.options.length) {
+            this.populateChemistryConditions();
+            this.populateChemistryEffects();
+        }
+
+        if (chemistry) {
+            this.elements.hasChemistry.checked = true;
+            this.elements.chemistrySettings.style.display = 'block';
+
+            if (this.elements.chemistryCondition) {
+                this.elements.chemistryCondition.value = chemistry.condition;
+            }
+            if (this.elements.chemistryEffect) {
+                this.elements.chemistryEffect.value = chemistry.effect;
+            }
+            this.populateChemistryValues();
+            if (this.elements.chemistryValue) {
+                this.elements.chemistryValue.value = chemistry.value;
+            }
+        } else {
+            this.elements.hasChemistry.checked = false;
+            this.elements.chemistrySettings.style.display = 'none';
+        }
+        this.updateChemistryPreview();
+    },
+
+    /**
+     * Clear chemistry form
+     */
+    clearChemistryForm() {
+        if (this.elements.hasChemistry) {
+            this.elements.hasChemistry.checked = false;
+        }
+        if (this.elements.chemistrySettings) {
+            this.elements.chemistrySettings.style.display = 'none';
+        }
+        if (this.elements.chemistryPreview) {
+            this.elements.chemistryPreview.textContent = '';
+        }
+    },
+
     /**
      * Render member list
      */
@@ -650,6 +823,12 @@ const UI = {
             const hasJobChanged = member.originalJob && member.originalJob !== member.job;
             const jobChangedIndicator = hasJobChanged ? '<span class="job-changed-indicator" title="已轉職">*</span>' : '';
 
+            // Chemistry indicator
+            const chemistryLabel = member.chemistry ?
+                GameData.formatChemistry(member.chemistry) : null;
+            const chemistryIndicator = chemistryLabel ?
+                `<div class="member-chemistry" title="${this.escapeHtml(chemistryLabel)}">吉兆</div>` : '';
+
             return `
                 <div class="member-card ${isSelected ? 'selected' : ''}" data-id="${member.id}">
                     <div class="member-avatar ${roleClass}">
@@ -658,6 +837,7 @@ const UI = {
                     <div class="member-info">
                         <div class="name">${this.escapeHtml(displayName)}</div>
                         <div class="job-level">${job ? job.name : '未知'}${jobChangedIndicator} Lv.${member.level}</div>
+                        ${chemistryIndicator}
                     </div>
                     <div class="member-stats">
                         <span class="stat-badge physical">${member.physical}</span>
@@ -776,6 +956,9 @@ const UI = {
                 this.elements.memberTactical.value = member.tactical || 0;
             }
 
+            // Load chemistry settings
+            this.setChemistryInForm(member.chemistry);
+
             // Update submit button text
             const submitBtn = this.elements.memberForm.querySelector('button[type="submit"]');
             if (submitBtn) {
@@ -798,6 +981,7 @@ const UI = {
                 this.elements.jobSelectGroup.style.display = 'none';
             }
             this.clearStatsInputs();
+            this.clearChemistryForm();
 
             // Populate grid
             this.populateRecruitGrid();
@@ -838,6 +1022,9 @@ const UI = {
         const mental = parseInt(this.elements.memberMental?.value) || 0;
         const tactical = parseInt(this.elements.memberTactical?.value) || 0;
 
+        // Get chemistry data
+        const chemistry = this.getChemistryFromForm();
+
         const memberData = {
             recruitId: recruitId,
             name: recruit.name,
@@ -847,7 +1034,8 @@ const UI = {
             level: level,
             physical: physical,
             mental: mental,
-            tactical: tactical
+            tactical: tactical,
+            chemistry: chemistry        // 吉兆設定
         };
 
         if (this.editingMemberId) {
@@ -943,11 +1131,16 @@ const UI = {
 
         // Calculate in next tick to allow UI update
         const trainingPool = this.getTrainingPool();
+        // Get mission level for chemistry conditions
+        const missionLevel = this.selectedMissionId ?
+            (GameData.getMission(this.selectedMissionId)?.level || 1) : 1;
+
         setTimeout(() => {
             const results = Calculator.getTopResults(this.members, requirements, 5, {
                 considerJobChange: considerJobChange,
                 squadRank: this.squadRank,
-                trainingPool: trainingPool
+                trainingPool: trainingPool,
+                missionLevel: missionLevel
             });
             this.renderResults(results, requirements, considerJobChange);
         }, 50);
@@ -996,6 +1189,34 @@ const UI = {
                     </div>
                 `;
             }
+
+            // Chemistry info
+            const chemistryHtml = result.activeChemistries && result.activeChemistries.length > 0 ? `
+                <div class="result-chemistry">
+                    <h4>吉兆加成</h4>
+                    <div class="chemistry-list">
+                        ${result.activeChemistries.map(chem => {
+                            const statClass = chem.stat;
+                            const scopeLabel = chem.scope === 'team' ? '全員' : '自身';
+                            const bonus = Math.floor(chem.member[chem.stat] * chem.percentage / 100);
+                            return `
+                                <div class="chemistry-item">
+                                    <span class="chemistry-member">${this.escapeHtml(chem.member.name)}</span>
+                                    <span class="chemistry-condition">${chem.condition.name}</span>
+                                    <span class="chemistry-effect ${statClass}">${chem.effect.name}+${chem.percentage}%</span>
+                                    <span class="chemistry-scope">(${scopeLabel})</span>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                    <div class="chemistry-total">
+                        總加成：
+                        <span class="physical">體能+${result.chemistryBonuses.physical}</span>
+                        <span class="mental">心智+${result.chemistryBonuses.mental}</span>
+                        <span class="tactical">戰術+${result.chemistryBonuses.tactical}</span>
+                    </div>
+                </div>
+            ` : '';
 
             const trainingHtml = result.trainingSolution && result.trainingSolution.trainings.length > 0 ? `
                 <div class="result-training">
@@ -1072,6 +1293,7 @@ const UI = {
                             </span>
                         </div>
                     </div>
+                    ${chemistryHtml}
                     ${jobChangeHtml}
                     ${trainingHtml}
                 </div>

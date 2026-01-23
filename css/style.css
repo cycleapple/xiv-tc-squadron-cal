@@ -397,6 +397,17 @@ body {
     color: var(--text-muted);
 }
 
+.member-chemistry {
+    font-size: 0.6rem;
+    color: var(--accent);
+    background: rgba(52, 152, 219, 0.15);
+    padding: 1px 4px;
+    border-radius: 3px;
+    display: inline-block;
+    margin-top: 2px;
+    cursor: help;
+}
+
 .member-stats {
     display: flex;
     gap: 3px;
@@ -729,6 +740,91 @@ body {
     font-size: 0.65rem;
     font-weight: bold;
 }
+
+/* Result Chemistry Display */
+.result-chemistry {
+    margin-top: 10px;
+    padding: 10px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius);
+    border-left: 3px solid var(--accent);
+}
+
+.result-chemistry h4 {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.chemistry-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.chemistry-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    flex-wrap: wrap;
+}
+
+.chemistry-member {
+    font-weight: 600;
+    color: var(--text-primary);
+    min-width: 80px;
+}
+
+.chemistry-condition {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}
+
+.chemistry-effect {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 0.75rem;
+}
+
+.chemistry-effect.physical {
+    background: rgba(231, 76, 60, 0.15);
+    color: var(--stat-physical);
+}
+
+.chemistry-effect.mental {
+    background: rgba(52, 152, 219, 0.15);
+    color: var(--stat-mental);
+}
+
+.chemistry-effect.tactical {
+    background: rgba(46, 204, 113, 0.15);
+    color: var(--stat-tactical);
+}
+
+.chemistry-scope {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+}
+
+.chemistry-total {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--border-color);
+    font-size: 0.8rem;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.chemistry-total span {
+    font-weight: 500;
+}
+
+.chemistry-total .physical { color: var(--stat-physical); }
+.chemistry-total .mental { color: var(--stat-mental); }
+.chemistry-total .tactical { color: var(--stat-tactical); }
 
 /* ==================== Training Panel ==================== */
 .panel-header-toggle {
@@ -1277,6 +1373,90 @@ body {
 .stat-input-item:nth-child(1) input { color: var(--stat-physical); }
 .stat-input-item:nth-child(2) input { color: var(--stat-mental); }
 .stat-input-item:nth-child(3) input { color: var(--stat-tactical); }
+
+/* ==================== Chemistry (吉兆) Input ==================== */
+.chemistry-input {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color);
+}
+
+.chemistry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.chemistry-header > label {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0;
+}
+
+.chemistry-toggle {
+    font-size: 0.85rem;
+}
+
+.chemistry-toggle span {
+    color: var(--text-muted);
+}
+
+.chemistry-settings {
+    background: var(--bg-tertiary);
+    border-radius: var(--radius);
+    padding: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.chemistry-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.chemistry-row:last-of-type {
+    margin-bottom: 0;
+}
+
+.chemistry-row label {
+    min-width: 50px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 0;
+}
+
+.chemistry-row select {
+    flex: 1;
+    padding: 8px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+}
+
+.chemistry-row select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.chemistry-preview {
+    margin-top: 10px;
+    padding: 10px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    color: var(--accent);
+    text-align: center;
+    font-weight: 500;
+    border: 1px dashed var(--accent);
+}
+
+.chemistry-preview:empty {
+    display: none;
+}
 
 /* ==================== Calculation Options ==================== */
 .calc-options {

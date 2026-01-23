@@ -591,6 +591,263 @@ const GameData = {
     // Get stat name
     getStatName(stat) {
         return this.statNames[stat]?.name || stat;
+    },
+
+    // ==================== 吉兆系統 (Chemistry System) ====================
+    // 來源: https://ff14.huijiwiki.com/wiki/冒险者分队
+    // 注意：吉兆条件與吉兆效果為組合關係，非一一對應
+
+    // 吉兆條件 (Chemistry Conditions)
+    chemistryConditions: {
+        'on-mission': { id: 1, name: '執行任務', nameEn: 'On Mission', type: 'always' },
+        'meets-level': { id: 2, name: '達到任務所需等級', nameEn: 'Meets Level Requirement', type: 'level' },
+        'level-50-plus': { id: 3, name: '等級達到50以上', nameEn: 'Level 50+', type: 'level' },
+        'with-hyur': { id: 4, name: '與人族同行', nameEn: 'With Hyur', type: 'race', race: 'hyur' },
+        'with-elezen': { id: 5, name: '與精靈族同行', nameEn: 'With Elezen', type: 'race', race: 'elezen' },
+        'with-miqote': { id: 6, name: '與貓魅族同行', nameEn: "With Miqo'te", type: 'race', race: 'miqote' },
+        'with-lalafell': { id: 7, name: '與拉拉菲爾族同行', nameEn: 'With Lalafell', type: 'race', race: 'lalafell' },
+        'with-roegadyn': { id: 8, name: '與魯加族同行', nameEn: 'With Roegadyn', type: 'race', race: 'roegadyn' },
+        'with-aura': { id: 9, name: '與敖龍族同行', nameEn: 'With Au Ra', type: 'race', race: 'aura' },
+        'with-gladiator': { id: 10, name: '與劍術士同行', nameEn: 'With Gladiator', type: 'job', job: 'gladiator' },
+        'with-marauder': { id: 11, name: '與斧術士同行', nameEn: 'With Marauder', type: 'job', job: 'marauder' },
+        'with-archer': { id: 12, name: '與弓術士同行', nameEn: 'With Archer', type: 'job', job: 'archer' },
+        'with-lancer': { id: 13, name: '與槍術士同行', nameEn: 'With Lancer', type: 'job', job: 'lancer' },
+        'with-rogue': { id: 14, name: '與雙劍士同行', nameEn: 'With Rogue', type: 'job', job: 'rogue' },
+        'with-pugilist': { id: 15, name: '與格鬥士同行', nameEn: 'With Pugilist', type: 'job', job: 'pugilist' },
+        'with-conjurer': { id: 16, name: '與幻術士同行', nameEn: 'With Conjurer', type: 'job', job: 'conjurer' },
+        'with-thaumaturge': { id: 17, name: '與咒術士同行', nameEn: 'With Thaumaturge', type: 'job', job: 'thaumaturge' },
+        'with-arcanist': { id: 18, name: '與巴術士同行', nameEn: 'With Arcanist', type: 'job', job: 'arcanist' },
+        'same-race': { id: 19, name: '同行者與自己的種族相同', nameEn: 'Same Race as Teammate', type: 'compare-race', compare: 'same' },
+        'diff-race': { id: 20, name: '同行者與自己的種族不同', nameEn: 'Different Race from Teammate', type: 'compare-race', compare: 'different' },
+        'same-job': { id: 21, name: '同行者與自己的職業相同', nameEn: 'Same Job as Teammate', type: 'compare-job', compare: 'same' },
+        'diff-job': { id: 22, name: '同行者與自己的職業不同', nameEn: 'Different Job from Teammate', type: 'compare-job', compare: 'different' },
+        'all-diff-race': { id: 23, name: '同行者的種族均不相同', nameEn: 'All Different Races', type: 'group-race', compare: 'all-different' },
+        'all-diff-job': { id: 24, name: '同行者的職業均不相同', nameEn: 'All Different Jobs', type: 'group-job', compare: 'all-different' },
+        'three-same-race': { id: 25, name: '同種族的同行者三人以上', nameEn: '3+ Same Race', type: 'group-race', compare: 'three-same' },
+        'three-same-job': { id: 26, name: '同職業的同行者三人以上', nameEn: '3+ Same Job', type: 'group-job', compare: 'three-same' }
+    },
+
+    // 吉兆效果 (Chemistry Effects) - 僅統計影響計算的效果
+    chemistryEffects: {
+        'physical-boost': {
+            id: 1, name: '體能', nameEn: 'Physical',
+            stat: 'physical', scope: 'self',
+            values: [10, 15, 20],
+            desc: '體能＋XX％'
+        },
+        'mental-boost': {
+            id: 2, name: '心智', nameEn: 'Mental',
+            stat: 'mental', scope: 'self',
+            values: [10, 15, 20],
+            desc: '心智＋XX％'
+        },
+        'tactical-boost': {
+            id: 3, name: '戰術', nameEn: 'Tactical',
+            stat: 'tactical', scope: 'self',
+            values: [10, 15, 20],
+            desc: '戰術＋XX％'
+        },
+        'all-physical-boost': {
+            id: 4, name: '全員體能', nameEn: 'All Physical',
+            stat: 'physical', scope: 'team',
+            values: [3, 5],
+            desc: '全員體能＋XX％'
+        },
+        'all-mental-boost': {
+            id: 5, name: '全員心智', nameEn: 'All Mental',
+            stat: 'mental', scope: 'team',
+            values: [3, 5],
+            desc: '全員心智＋XX％'
+        },
+        'all-tactical-boost': {
+            id: 6, name: '全員戰術', nameEn: 'All Tactical',
+            stat: 'tactical', scope: 'team',
+            values: [3, 5],
+            desc: '全員戰術＋XX％'
+        }
+    },
+
+    // 獲取所有吉兆條件列表
+    getAllChemistryConditions() {
+        return Object.entries(this.chemistryConditions).map(([key, cond]) => ({
+            key,
+            ...cond
+        }));
+    },
+
+    // 獲取所有吉兆效果列表
+    getAllChemistryEffects() {
+        return Object.entries(this.chemistryEffects).map(([key, effect]) => ({
+            key,
+            ...effect
+        }));
+    },
+
+    // 獲取吉兆條件
+    getChemistryCondition(condKey) {
+        return this.chemistryConditions[condKey] || null;
+    },
+
+    // 獲取吉兆效果
+    getChemistryEffect(effectKey) {
+        return this.chemistryEffects[effectKey] || null;
+    },
+
+    // 檢查吉兆條件是否滿足
+    checkChemistryCondition(condKey, member, partyMembers, missionLevel = 1) {
+        const condition = this.chemistryConditions[condKey];
+        if (!condition) return false;
+
+        const otherMembers = partyMembers.filter(m => m.id !== member.id);
+
+        switch (condition.type) {
+            case 'always':
+                return true;
+
+            case 'level':
+                if (condKey === 'meets-level') {
+                    return member.level >= missionLevel;
+                }
+                if (condKey === 'level-50-plus') {
+                    return member.level >= 50;
+                }
+                return false;
+
+            case 'race':
+                return otherMembers.some(m => m.race === condition.race);
+
+            case 'job':
+                return otherMembers.some(m => m.job === condition.job);
+
+            case 'compare-race':
+                if (condition.compare === 'same') {
+                    return otherMembers.some(m => m.race === member.race);
+                } else {
+                    return otherMembers.some(m => m.race !== member.race);
+                }
+
+            case 'compare-job':
+                if (condition.compare === 'same') {
+                    return otherMembers.some(m => m.job === member.job);
+                } else {
+                    return otherMembers.some(m => m.job !== member.job);
+                }
+
+            case 'group-race':
+                if (condition.compare === 'all-different') {
+                    const races = partyMembers.map(m => m.race);
+                    return new Set(races).size === races.length;
+                }
+                if (condition.compare === 'three-same') {
+                    const raceCounts = {};
+                    partyMembers.forEach(m => {
+                        raceCounts[m.race] = (raceCounts[m.race] || 0) + 1;
+                    });
+                    return Object.values(raceCounts).some(count => count >= 3);
+                }
+                return false;
+
+            case 'group-job':
+                if (condition.compare === 'all-different') {
+                    const jobs = partyMembers.map(m => m.job);
+                    return new Set(jobs).size === jobs.length;
+                }
+                if (condition.compare === 'three-same') {
+                    const jobCounts = {};
+                    partyMembers.forEach(m => {
+                        jobCounts[m.job] = (jobCounts[m.job] || 0) + 1;
+                    });
+                    return Object.values(jobCounts).some(count => count >= 3);
+                }
+                return false;
+
+            default:
+                return false;
+        }
+    },
+
+    // 計算吉兆加成後的隊伍數值
+    calculateChemistryBonuses(partyMembers, missionLevel = 1) {
+        const bonuses = {
+            physical: 0,
+            mental: 0,
+            tactical: 0
+        };
+
+        // 收集所有生效的吉兆
+        const activeChemistries = [];
+
+        partyMembers.forEach(member => {
+            if (!member.chemistry) return;
+
+            const { condition: condKey, effect: effectKey, value: valueIndex } = member.chemistry;
+            const condition = this.chemistryConditions[condKey];
+            const effect = this.chemistryEffects[effectKey];
+
+            if (!condition || !effect) return;
+
+            // 檢查條件是否滿足
+            const isMet = this.checkChemistryCondition(condKey, member, partyMembers, missionLevel);
+            if (!isMet) return;
+
+            const percentage = effect.values[valueIndex] || effect.values[0];
+            const stat = effect.stat;
+
+            activeChemistries.push({
+                member,
+                condition,
+                effect,
+                percentage,
+                stat,
+                scope: effect.scope
+            });
+        });
+
+        // 計算加成
+        // 先計算個人加成 (self scope)
+        const memberBonuses = {};
+        partyMembers.forEach(m => {
+            memberBonuses[m.id] = { physical: 0, mental: 0, tactical: 0 };
+        });
+
+        activeChemistries.forEach(chem => {
+            if (chem.scope === 'self') {
+                // 個人加成：只影響該隊員
+                const bonus = Math.floor(chem.member[chem.stat] * chem.percentage / 100);
+                memberBonuses[chem.member.id][chem.stat] += bonus;
+            } else if (chem.scope === 'team') {
+                // 全員加成：影響所有隊員
+                partyMembers.forEach(m => {
+                    const bonus = Math.floor(m[chem.stat] * chem.percentage / 100);
+                    memberBonuses[m.id][chem.stat] += bonus;
+                });
+            }
+        });
+
+        // 彙總所有加成
+        Object.values(memberBonuses).forEach(mb => {
+            bonuses.physical += mb.physical;
+            bonuses.mental += mb.mental;
+            bonuses.tactical += mb.tactical;
+        });
+
+        return {
+            bonuses,
+            memberBonuses,
+            activeChemistries
+        };
+    },
+
+    // 格式化吉兆顯示文字
+    formatChemistry(chemistry) {
+        if (!chemistry) return null;
+
+        const condition = this.chemistryConditions[chemistry.condition];
+        const effect = this.chemistryEffects[chemistry.effect];
+        if (!condition || !effect) return null;
+
+        const percentage = effect.values[chemistry.value] || effect.values[0];
+        return `${condition.name}：${effect.name}+${percentage}%`;
     }
 };
 

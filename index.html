@@ -280,6 +280,39 @@
                             </div>
                         </div>
                     </div>
+                    <!-- Chemistry (吉兆) Input -->
+                    <div class="form-group chemistry-input">
+                        <div class="chemistry-header">
+                            <label>吉兆設定</label>
+                            <label class="checkbox-label chemistry-toggle">
+                                <input type="checkbox" id="hasChemistry">
+                                <span>啟用吉兆</span>
+                            </label>
+                        </div>
+                        <div id="chemistrySettings" class="chemistry-settings" style="display: none;">
+                            <div class="chemistry-row">
+                                <label for="chemistryCondition">條件：</label>
+                                <select id="chemistryCondition">
+                                    <!-- Options populated by JS -->
+                                </select>
+                            </div>
+                            <div class="chemistry-row">
+                                <label for="chemistryEffect">效果：</label>
+                                <select id="chemistryEffect">
+                                    <!-- Options populated by JS -->
+                                </select>
+                            </div>
+                            <div class="chemistry-row">
+                                <label for="chemistryValue">數值：</label>
+                                <select id="chemistryValue">
+                                    <!-- Options populated by JS based on effect -->
+                                </select>
+                            </div>
+                            <div class="chemistry-preview" id="chemistryPreview">
+                                <!-- Preview of chemistry text -->
+                            </div>
+                        </div>
+                    </div>
                     <div class="form-actions">
                         <button type="button" class="btn btn-secondary modal-cancel">取消</button>
                         <button type="submit" class="btn btn-primary">新增</button>

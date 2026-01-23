@@ -133,26 +133,34 @@ const Calculator = {
      * Analyze all combinations and rank by optimal solutions
      * @param {Array} members - Array of all members
      * @param {Object} requirements - Required stats
+     * @param {Object} trainingPool - Training pool stats
+     * @param {number} missionLevel - Mission level for chemistry conditions
      * @returns {Array} Sorted array of results
      */
-    analyzeAllCombinations(members, requirements, trainingPool = { physical: 0, mental: 0, tactical: 0 }) {
+    analyzeAllCombinations(members, requirements, trainingPool = { physical: 0, mental: 0, tactical: 0 }, missionLevel = 1) {
         const combinations = this.getCombinations(members);
         const results = [];
 
         for (const combo of combinations) {
-            const memberStats = this.calculateGroupStats(combo);
-            // Add training pool to member stats
+            // Calculate stats with chemistry bonuses
+            const chemistryResult = this.calculateStatsWithChemistry(combo, missionLevel);
+            const memberStats = chemistryResult.baseStats;
+
+            // Add training pool and chemistry bonuses
             const currentStats = {
-                physical: memberStats.physical + trainingPool.physical,
-                mental: memberStats.mental + trainingPool.mental,
-                tactical: memberStats.tactical + trainingPool.tactical
+                physical: chemistryResult.totalStats.physical + trainingPool.physical,
+                mental: chemistryResult.totalStats.mental + trainingPool.mental,
+                tactical: chemistryResult.totalStats.tactical + trainingPool.tactical
             };
             const difference = this.calculateDifference(currentStats, requirements);
 
             const result = {
                 members: combo,
                 currentStats,
-                memberStats, // Store original member stats without pool
+                memberStats, // Base stats without pool or chemistry
+                baseStatsWithChemistry: chemistryResult.totalStats, // Stats with chemistry but without pool
+                chemistryBonuses: chemistryResult.chemistryBonuses,
+                activeChemistries: chemistryResult.activeChemistries,
                 trainingPool,
                 difference,
                 meetsRequirements: this.meetsRequirements(currentStats, requirements),
@@ -198,9 +206,9 @@ const Calculator = {
      * @returns {Array} Top results
      */
     getTopResults(members, requirements, limit = 5, options = {}) {
-        const { considerJobChange = false, squadRank = 3, trainingPool = { physical: 0, mental: 0, tactical: 0 } } = options;
+        const { considerJobChange = false, squadRank = 3, trainingPool = { physical: 0, mental: 0, tactical: 0 }, missionLevel = 1 } = options;
 
-        let allResults = this.analyzeAllCombinations(members, requirements, trainingPool);
+        let allResults = this.analyzeAllCombinations(members, requirements, trainingPool, missionLevel);
 
         // If considering job changes, find additional solutions with job changes
         if (considerJobChange) {
@@ -427,58 +435,50 @@ const Calculator = {
     },
 
     /**
-     * Calculate chemistry bonus for a group
+     * Calculate stats with chemistry effects for a group
      * @param {Array} members - Array of member objects
-     * @returns {Object} Bonus information
+     * @param {number} missionLevel - Mission level (for chemistry conditions)
+     * @returns {Object} Stats with chemistry bonuses applied
      */
-    calculateChemistryBonus(members) {
-        const races = members.map(m => m.race);
-        const jobs = members.map(m => m.job);
+    calculateStatsWithChemistry(members, missionLevel = 1) {
+        // Calculate base stats first
+        const baseStats = this.calculateGroupStats(members);
 
-        const bonuses = [];
+        // Calculate chemistry bonuses using GameData helper
+        const chemistryResult = GameData.calculateChemistryBonuses(members, missionLevel);
 
-        // Check for same race bonus
-        const raceCounts = {};
-        races.forEach(r => { raceCounts[r] = (raceCounts[r] || 0) + 1; });
-        const maxSameRace = Math.max(...Object.values(raceCounts));
-
-        if (maxSameRace >= 2) {
-            bonuses.push({
-                type: 'sameRace',
-                value: GameData.chemistryBonuses.sameRace,
-                description: `${maxSameRace} 名相同種族 +${GameData.chemistryBonuses.sameRace}%`
-            });
-        }
-
-        // Check for same job bonus
-        const jobCounts = {};
-        jobs.forEach(j => { jobCounts[j] = (jobCounts[j] || 0) + 1; });
-        const maxSameJob = Math.max(...Object.values(jobCounts));
-
-        if (maxSameJob >= 2) {
-            bonuses.push({
-                type: 'sameJob',
-                value: GameData.chemistryBonuses.sameJob,
-                description: `${maxSameJob} 名相同職業 +${GameData.chemistryBonuses.sameJob}%`
-            });
-        }
-
-        // Check for all different races
-        const uniqueRaces = new Set(races).size;
-        if (uniqueRaces === 4) {
-            bonuses.push({
-                type: 'mixedRace',
-                value: GameData.chemistryBonuses.mixedRace,
-                description: `4 種不同種族 +${GameData.chemistryBonuses.mixedRace}%`
-            });
-        }
-
+        // Total stats = base stats + chemistry bonuses
         return {
-            bonuses,
-            totalBonus: bonuses.reduce((sum, b) => sum + b.value, 0)
+            baseStats,
+            chemistryBonuses: chemistryResult.bonuses,
+            memberBonuses: chemistryResult.memberBonuses,
+            activeChemistries: chemistryResult.activeChemistries,
+            totalStats: {
+                physical: baseStats.physical + chemistryResult.bonuses.physical,
+                mental: baseStats.mental + chemistryResult.bonuses.mental,
+                tactical: baseStats.tactical + chemistryResult.bonuses.tactical
+            }
         };
+    },
+
+    /**
+     * Format active chemistry info for display
+     * @param {Array} activeChemistries - Array of active chemistry objects
+     * @returns {Array} Formatted chemistry info
+     */
+    formatActiveChemistries(activeChemistries) {
+        return activeChemistries.map(chem => ({
+            memberName: chem.member.name,
+            condition: chem.condition.name,
+            effect: `${chem.effect.name}+${chem.percentage}%`,
+            scope: chem.scope === 'team' ? '全員' : '自身',
+            stat: chem.stat,
+            bonus: Math.floor(chem.member[chem.stat] * chem.percentage / 100)
+        }));
     }
 };
+
+// Export for module use
 
 // Export for module use
 if (typeof module !== 'undefined' && module.exports) {
