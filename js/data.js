@@ -162,49 +162,56 @@ const GameData = {
             name: '基礎訓練：體能',
             nameEn: 'Basic Training: Physical',
             desc: '綜合體能 +40',
-            exp: 2000
+            exp: 2000,
+            icon: 'images/training/physical.png'
         },
         'mental-a': {
             physical: 0, mental: 40, tactical: 0,
             name: '基礎訓練：心智',
             nameEn: 'Basic Training: Mental',
             desc: '綜合心智 +40',
-            exp: 2000
+            exp: 2000,
+            icon: 'images/training/mental.png'
         },
         'tactical-a': {
             physical: 0, mental: 0, tactical: 40,
             name: '基礎訓練：戰術',
             nameEn: 'Basic Training: Tactical',
             desc: '綜合戰術 +40',
-            exp: 2000
+            exp: 2000,
+            icon: 'images/training/tactical.png'
         },
         'physical-mental': {
             physical: 20, mental: 20, tactical: 0,
             name: '組合訓練：體能＆心智',
             nameEn: 'Combined Training: Physical & Mental',
             desc: '綜合體能 +20，綜合心智 +20',
-            exp: 2000
+            exp: 2000,
+            icon: 'images/training/physical_mental.png'
         },
         'physical-tactical': {
             physical: 20, mental: 0, tactical: 20,
             name: '組合訓練：體能＆戰術',
             nameEn: 'Combined Training: Physical & Tactical',
             desc: '綜合體能 +20，綜合戰術 +20',
-            exp: 2000
+            exp: 2000,
+            icon: 'images/training/physical_tactical.png'
         },
         'mental-tactical': {
             physical: 0, mental: 20, tactical: 20,
             name: '組合訓練：心智＆戰術',
             nameEn: 'Combined Training: Mental & Tactical',
             desc: '綜合心智 +20，綜合戰術 +20',
-            exp: 2000
+            exp: 2000,
+            icon: 'images/training/mental_tactical.png'
         },
         'comprehensive': {
             physical: 0, mental: 0, tactical: 0,
             name: '綜合訓練',
             nameEn: 'Comprehensive Training',
             desc: '只獲得經驗值（無能力變化）',
-            exp: 3000
+            exp: 3000,
+            icon: 'images/training/all.png'
         }
     },
 

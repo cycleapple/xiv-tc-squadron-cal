@@ -72,7 +72,10 @@
             <section class="panel member-panel">
                 <div class="panel-header">
                     <h2>隊員管理</h2>
-                    <button id="addMemberBtn" class="btn btn-primary">+ 新增隊員</button>
+                    <div class="panel-header-actions">
+                        <button id="trainingBtn" class="btn btn-secondary">訓練</button>
+                        <button id="addMemberBtn" class="btn btn-primary">+ 新增隊員</button>
+                    </div>
                 </div>
                 <!-- Squad Rank Setting -->
                 <div class="squad-rank-setting">
@@ -385,6 +388,41 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Training Modal -->
+        <div id="trainingModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>選擇訓練</h2>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p class="training-hint">選擇要進行的訓練，將套用到目前選擇的隊員</p>
+                    <div id="trainingGrid" class="training-grid">
+                        <!-- Training buttons will be generated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Training Confirm Modal -->
+        <div id="trainingConfirmModal" class="modal">
+            <div class="modal-content modal-small">
+                <div class="modal-header">
+                    <h2>確認訓練</h2>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="trainingConfirmContent" class="training-confirm-content">
+                        <!-- Confirmation content will be generated here -->
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary modal-cancel">取消</button>
+                    <button type="button" id="confirmTrainingBtn" class="btn btn-primary">確認套用</button>
                 </div>
             </div>
         </div>

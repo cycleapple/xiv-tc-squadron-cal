@@ -185,6 +185,11 @@ body {
     border-bottom: none;
 }
 
+.panel-header-actions {
+    display: flex;
+    gap: 8px;
+}
+
 .panel-footer {
     display: flex;
     flex-wrap: wrap;
@@ -1779,4 +1784,178 @@ body {
     .stats-group .stats-inputs {
         grid-template-columns: 1fr;
     }
+
+    .training-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ========================================
+   Training Modal Styles
+   ======================================== */
+
+/* Training icon in result steps */
+.training-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+}
+
+/* Training hint text */
+.training-hint {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-bottom: 16px;
+    text-align: center;
+}
+
+/* Training selection grid */
+.training-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.training-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 12px;
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all var(--transition);
+    text-align: center;
+}
+
+.training-btn:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--accent);
+    transform: translateY(-2px);
+}
+
+.training-btn-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+}
+
+.training-btn-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.training-btn-desc {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* Training confirm modal */
+.modal-small .modal-content {
+    max-width: 400px;
+}
+
+.training-confirm-content {
+    padding: 8px 0;
+}
+
+.training-confirm-preview {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius);
+    margin-bottom: 16px;
+}
+
+.training-confirm-icon img {
+    width: 64px;
+    height: 64px;
+    border-radius: 8px;
+}
+
+.training-confirm-info h3 {
+    font-size: 1rem;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.training-confirm-info p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.training-confirm-members {
+    padding: 12px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius);
+}
+
+.training-confirm-members p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.training-confirm-members ul {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.training-confirm-members li {
+    background: var(--bg-card);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: var(--text-primary);
+}
+
+/* Training pool change preview */
+.training-confirm-changes {
+    padding: 12px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius);
+}
+
+.training-confirm-changes p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+}
+
+.pool-change-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.pool-change-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+}
+
+.pool-change-item .stat-icon {
+    width: 16px;
+    height: 16px;
+}
+
+.pool-change-item .change-diff {
+    margin-left: auto;
+    font-weight: 600;
+}
+
+.pool-change-item .change-diff.positive {
+    color: var(--success);
+}
+
+.pool-change-item .change-diff.negative {
+    color: var(--error);
 }

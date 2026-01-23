@@ -330,6 +330,7 @@ const UI = {
         this.elements = {
             memberList: document.getElementById('memberList'),
             addMemberBtn: document.getElementById('addMemberBtn'),
+            trainingBtn: document.getElementById('trainingBtn'),
             importBtn: document.getElementById('importBtn'),
             exportBtn: document.getElementById('exportBtn'),
             calculateBtn: document.getElementById('calculateBtn'),
@@ -392,7 +393,14 @@ const UI = {
             chemistryCondition: document.getElementById('chemistryCondition'),
             chemistryEffect: document.getElementById('chemistryEffect'),
             chemistryValue: document.getElementById('chemistryValue'),
-            chemistryPreview: document.getElementById('chemistryPreview')
+            chemistryPreview: document.getElementById('chemistryPreview'),
+
+            // Training modals
+            trainingModal: document.getElementById('trainingModal'),
+            trainingGrid: document.getElementById('trainingGrid'),
+            trainingConfirmModal: document.getElementById('trainingConfirmModal'),
+            trainingConfirmContent: document.getElementById('trainingConfirmContent'),
+            confirmTrainingBtn: document.getElementById('confirmTrainingBtn')
         };
     },
 
@@ -402,6 +410,11 @@ const UI = {
     bindEvents() {
         // Add member button
         this.elements.addMemberBtn.addEventListener('click', () => this.openMemberModal());
+
+        // Training button
+        if (this.elements.trainingBtn) {
+            this.elements.trainingBtn.addEventListener('click', () => this.openTrainingModal());
+        }
 
         // Calculate button
         this.elements.calculateBtn.addEventListener('click', () => this.calculate());
@@ -519,6 +532,11 @@ const UI = {
             this.elements.recruitsChallengeFilter.addEventListener('change', () => this.renderRecruitsTable());
         }
 
+        // Confirm training button
+        if (this.elements.confirmTrainingBtn) {
+            this.elements.confirmTrainingBtn.addEventListener('click', () => this.applyTraining());
+        }
+
         // Close modal on outside click
         document.querySelectorAll('.modal').forEach(modal => {
             modal.addEventListener('click', (e) => {
@@ -543,6 +561,20 @@ const UI = {
         if (this.elements.squadRank) {
             this.elements.squadRank.value = this.squadRank;
         }
+
+        // Load training pool values
+        if (settings.trainingPool) {
+            if (this.elements.poolPhysical) {
+                this.elements.poolPhysical.value = settings.trainingPool.physical || 0;
+            }
+            if (this.elements.poolMental) {
+                this.elements.poolMental.value = settings.trainingPool.mental || 0;
+            }
+            if (this.elements.poolTactical) {
+                this.elements.poolTactical.value = settings.trainingPool.tactical || 0;
+            }
+        }
+        this.updateTrainingPoolTotal(false); // Don't save when loading
     },
 
     /**
@@ -556,7 +588,15 @@ const UI = {
      * Save settings to storage
      */
     saveSettings() {
-        Storage.saveSettings({ squadRank: this.squadRank });
+        const trainingPool = {
+            physical: parseInt(this.elements.poolPhysical?.value) || 0,
+            mental: parseInt(this.elements.poolMental?.value) || 0,
+            tactical: parseInt(this.elements.poolTactical?.value) || 0
+        };
+        Storage.saveSettings({
+            squadRank: this.squadRank,
+            trainingPool: trainingPool
+        });
     },
 
     /**
@@ -569,23 +609,61 @@ const UI = {
     },
 
     /**
-     * Update training pool total display
+     * Update training pool total display and enforce cap
+     * @param {boolean} save - Whether to save to storage (default true)
      */
-    updateTrainingPoolTotal() {
-        const physical = parseInt(this.elements.poolPhysical?.value) || 0;
-        const mental = parseInt(this.elements.poolMental?.value) || 0;
-        const tactical = parseInt(this.elements.poolTactical?.value) || 0;
-        const total = physical + mental + tactical;
+    updateTrainingPoolTotal(save = true) {
         const cap = GameData.rankCaps[this.squadRank] || 400;
 
+        let physical = parseInt(this.elements.poolPhysical?.value) || 0;
+        let mental = parseInt(this.elements.poolMental?.value) || 0;
+        let tactical = parseInt(this.elements.poolTactical?.value) || 0;
+
+        // Ensure non-negative
+        physical = Math.max(0, physical);
+        mental = Math.max(0, mental);
+        tactical = Math.max(0, tactical);
+
+        // Enforce cap - if total exceeds, scale down proportionally
+        const total = physical + mental + tactical;
+        if (total > cap) {
+            const scale = cap / total;
+            physical = Math.floor(physical * scale);
+            mental = Math.floor(mental * scale);
+            tactical = Math.floor(tactical * scale);
+
+            // Handle rounding - add remainder to largest stat
+            const newTotal = physical + mental + tactical;
+            const remainder = cap - newTotal;
+            if (remainder > 0) {
+                if (physical >= mental && physical >= tactical) {
+                    physical += remainder;
+                } else if (mental >= tactical) {
+                    mental += remainder;
+                } else {
+                    tactical += remainder;
+                }
+            }
+
+            // Update input values
+            if (this.elements.poolPhysical) this.elements.poolPhysical.value = physical;
+            if (this.elements.poolMental) this.elements.poolMental.value = mental;
+            if (this.elements.poolTactical) this.elements.poolTactical.value = tactical;
+        }
+
+        const finalTotal = physical + mental + tactical;
+
         if (this.elements.trainingPoolTotal) {
-            this.elements.trainingPoolTotal.textContent = `${total} / ${cap}`;
+            this.elements.trainingPoolTotal.textContent = `${finalTotal} / ${cap}`;
             this.elements.trainingPoolTotal.classList.remove('over', 'valid');
-            if (total > cap) {
-                this.elements.trainingPoolTotal.classList.add('over');
-            } else if (total === cap) {
+            if (finalTotal === cap) {
                 this.elements.trainingPoolTotal.classList.add('valid');
             }
+        }
+
+        // Save to storage
+        if (save) {
+            this.saveSettings();
         }
     },
 
@@ -1226,6 +1304,7 @@ const UI = {
                         return `
                             <div class="training-step">
                                 <span class="step-num">${i + 1}</span>
+                                <img src="${training.icon}" alt="${training.name}" class="training-icon">
                                 <span>${training.name}</span>
                             </div>
                         `;
@@ -1415,6 +1494,216 @@ const UI = {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    },
+
+    // ========================================
+    // Training Modal Functions
+    // ========================================
+
+    /**
+     * Pending training type for confirmation
+     */
+    pendingTrainingType: null,
+
+    /**
+     * Open training modal
+     */
+    openTrainingModal() {
+        // Check if there are members
+        if (this.members.length === 0) {
+            alert('請先新增隊員');
+            return;
+        }
+
+        // Get all trainings (excluding comprehensive since it has no stat changes)
+        const trainings = GameData.getAllTrainings().filter(t => t.key !== 'comprehensive');
+
+        // Render training grid
+        this.elements.trainingGrid.innerHTML = trainings.map(training => `
+            <button class="training-btn" data-training="${training.key}" onclick="UI.selectTraining('${training.key}')">
+                <img src="${training.icon}" alt="${training.name}" class="training-btn-icon">
+                <span class="training-btn-name">${training.name}</span>
+                <span class="training-btn-desc">${training.desc}</span>
+            </button>
+        `).join('');
+
+        this.elements.trainingModal.classList.add('active');
+    },
+
+    /**
+     * Calculate training result with redistribution logic
+     * Training adds to target stats and subtracts equally from other stats
+     * @param {Object} currentPool - Current pool values
+     * @param {Object} training - Training effect
+     * @returns {Object} New pool values after training
+     */
+    calculateTrainingResult(currentPool, training) {
+        const cap = GameData.rankCaps[this.squadRank] || 400;
+
+        // Calculate total increase from training
+        const totalIncrease = Math.max(0, training.physical) +
+                              Math.max(0, training.mental) +
+                              Math.max(0, training.tactical);
+
+        // Find which stats were NOT increased (these will be reduced)
+        const otherStats = [];
+        if (training.physical <= 0) otherStats.push('physical');
+        if (training.mental <= 0) otherStats.push('mental');
+        if (training.tactical <= 0) otherStats.push('tactical');
+
+        // Start with training applied
+        let newPool = {
+            physical: currentPool.physical + training.physical,
+            mental: currentPool.mental + training.mental,
+            tactical: currentPool.tactical + training.tactical
+        };
+
+        // Check if current pool is at or over cap - if so, redistribute
+        const currentTotal = currentPool.physical + currentPool.mental + currentPool.tactical;
+        if (currentTotal >= cap && otherStats.length > 0 && totalIncrease > 0) {
+            let remaining = totalIncrease;
+
+            // First pass: try to reduce evenly
+            const reducePerStat = Math.floor(totalIncrease / otherStats.length);
+
+            for (const stat of otherStats) {
+                const maxReduce = Math.min(reducePerStat, newPool[stat]);
+                newPool[stat] -= maxReduce;
+                remaining -= maxReduce;
+            }
+
+            // Second pass: handle remainder
+            while (remaining > 0) {
+                let reduced = false;
+                for (const stat of otherStats) {
+                    if (newPool[stat] > 0 && remaining > 0) {
+                        newPool[stat]--;
+                        remaining--;
+                        reduced = true;
+                    }
+                }
+                if (!reduced) break;
+            }
+        }
+
+        // Ensure no negative values
+        newPool.physical = Math.max(0, newPool.physical);
+        newPool.mental = Math.max(0, newPool.mental);
+        newPool.tactical = Math.max(0, newPool.tactical);
+
+        // Final check: ensure total doesn't exceed cap
+        const finalTotal = newPool.physical + newPool.mental + newPool.tactical;
+        if (finalTotal > cap) {
+            const scale = cap / finalTotal;
+            newPool.physical = Math.floor(newPool.physical * scale);
+            newPool.mental = Math.floor(newPool.mental * scale);
+            newPool.tactical = Math.floor(newPool.tactical * scale);
+        }
+
+        return newPool;
+    },
+
+    /**
+     * Select a training and show confirmation
+     * @param {string} trainingType - Training type key
+     */
+    selectTraining(trainingType) {
+        this.pendingTrainingType = trainingType;
+        const training = GameData.getTraining(trainingType);
+
+        if (!training) return;
+
+        // Close training selection modal
+        this.elements.trainingModal.classList.remove('active');
+
+        // Get current training pool values and calculate result
+        const currentPool = this.getTrainingPool();
+        const newPool = this.calculateTrainingResult(currentPool, training);
+
+        // Calculate actual changes
+        const changes = {
+            physical: newPool.physical - currentPool.physical,
+            mental: newPool.mental - currentPool.mental,
+            tactical: newPool.tactical - currentPool.tactical
+        };
+
+        // Generate preview content showing pool changes
+        const formatChange = (value) => {
+            if (value === 0) return '<span class="change-diff">(±0)</span>';
+            const cls = value > 0 ? 'positive' : 'negative';
+            const sign = value > 0 ? '+' : '';
+            return `<span class="change-diff ${cls}">(${sign}${value})</span>`;
+        };
+
+        const previewHtml = `
+            <div class="training-confirm-preview">
+                <div class="training-confirm-icon">
+                    <img src="${training.icon}" alt="${training.name}">
+                </div>
+                <div class="training-confirm-info">
+                    <h3>${training.name}</h3>
+                    <p>${training.desc}</p>
+                </div>
+            </div>
+            <div class="training-confirm-changes">
+                <p>訓練屬性池變化：</p>
+                <div class="pool-change-list">
+                    <div class="pool-change-item">
+                        <span class="stat-icon physical"></span>
+                        <span>體能：${currentPool.physical} → ${newPool.physical}</span>
+                        ${formatChange(changes.physical)}
+                    </div>
+                    <div class="pool-change-item">
+                        <span class="stat-icon mental"></span>
+                        <span>心智：${currentPool.mental} → ${newPool.mental}</span>
+                        ${formatChange(changes.mental)}
+                    </div>
+                    <div class="pool-change-item">
+                        <span class="stat-icon tactical"></span>
+                        <span>戰術：${currentPool.tactical} → ${newPool.tactical}</span>
+                        ${formatChange(changes.tactical)}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        this.elements.trainingConfirmContent.innerHTML = previewHtml;
+        this.elements.trainingConfirmModal.classList.add('active');
+    },
+
+    /**
+     * Apply the pending training to the training pool
+     */
+    applyTraining() {
+        if (!this.pendingTrainingType) return;
+
+        const training = GameData.getTraining(this.pendingTrainingType);
+        if (!training) return;
+
+        // Get current pool and calculate result
+        const currentPool = this.getTrainingPool();
+        const newPool = this.calculateTrainingResult(currentPool, training);
+
+        // Apply to inputs
+        if (this.elements.poolPhysical) {
+            this.elements.poolPhysical.value = newPool.physical;
+        }
+        if (this.elements.poolMental) {
+            this.elements.poolMental.value = newPool.mental;
+        }
+        if (this.elements.poolTactical) {
+            this.elements.poolTactical.value = newPool.tactical;
+        }
+
+        // Update display and save
+        this.updateTrainingPoolTotal();
+
+        // Close modal and reset state
+        this.elements.trainingConfirmModal.classList.remove('active');
+        this.pendingTrainingType = null;
+
+        // Show success message
+        alert(`已套用「${training.name}」訓練！`);
     }
 };
 

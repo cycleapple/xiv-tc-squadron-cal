@@ -5,6 +5,78 @@
 
 const Calculator = {
     /**
+     * Calculate training result with redistribution logic
+     * Training adds to target stats and subtracts from other stats when at cap
+     * @param {Object} currentPool - Current pool values {physical, mental, tactical}
+     * @param {Object} training - Training effect {physical, mental, tactical}
+     * @param {number} cap - Pool cap based on squad rank
+     * @returns {Object} New pool values after training
+     */
+    applyTrainingToPool(currentPool, training, cap) {
+        // Calculate total increase from training
+        const totalIncrease = Math.max(0, training.physical) +
+                              Math.max(0, training.mental) +
+                              Math.max(0, training.tactical);
+
+        // Find which stats were NOT increased (these will be reduced)
+        const otherStats = [];
+        if (training.physical <= 0) otherStats.push('physical');
+        if (training.mental <= 0) otherStats.push('mental');
+        if (training.tactical <= 0) otherStats.push('tactical');
+
+        // Start with training applied
+        let newPool = {
+            physical: currentPool.physical + training.physical,
+            mental: currentPool.mental + training.mental,
+            tactical: currentPool.tactical + training.tactical
+        };
+
+        // Check if we're at or over cap - if so, redistribute
+        const currentTotal = currentPool.physical + currentPool.mental + currentPool.tactical;
+        if (currentTotal >= cap && otherStats.length > 0 && totalIncrease > 0) {
+            let remaining = totalIncrease;
+
+            // First pass: try to reduce evenly
+            const reducePerStat = Math.floor(totalIncrease / otherStats.length);
+
+            for (const stat of otherStats) {
+                const maxReduce = Math.min(reducePerStat, newPool[stat]);
+                newPool[stat] -= maxReduce;
+                remaining -= maxReduce;
+            }
+
+            // Second pass: handle remainder
+            while (remaining > 0) {
+                let reduced = false;
+                for (const stat of otherStats) {
+                    if (newPool[stat] > 0 && remaining > 0) {
+                        newPool[stat]--;
+                        remaining--;
+                        reduced = true;
+                    }
+                }
+                if (!reduced) break;
+            }
+        }
+
+        // Ensure no negative values and cap total
+        newPool.physical = Math.max(0, newPool.physical);
+        newPool.mental = Math.max(0, newPool.mental);
+        newPool.tactical = Math.max(0, newPool.tactical);
+
+        // Final check: ensure total doesn't exceed cap
+        const finalTotal = newPool.physical + newPool.mental + newPool.tactical;
+        if (finalTotal > cap) {
+            const scale = cap / finalTotal;
+            newPool.physical = Math.floor(newPool.physical * scale);
+            newPool.mental = Math.floor(newPool.mental * scale);
+            newPool.tactical = Math.floor(newPool.tactical * scale);
+        }
+
+        return newPool;
+    },
+
+    /**
      * Calculate all possible 4-member combinations
      * @param {Array} members - Array of member objects (max 8)
      * @returns {Array} Array of combination arrays
@@ -76,28 +148,85 @@ const Calculator = {
     /**
      * Find minimum training sequence to meet requirements
      * Uses BFS to find shortest path
-     * @param {Object} current - Current stats
+     * @param {Object} current - Current total stats (members + pool + chemistry)
      * @param {Object} required - Required stats
+     * @param {Object} poolInfo - Training pool info {pool, cap, memberStats} (optional)
      * @param {number} maxTrainings - Maximum trainings to search (default 5)
      * @returns {Object|null} Training solution or null if impossible
      */
-    findTrainingSolution(current, required, maxTrainings = 5) {
+    findTrainingSolution(current, required, poolInfo = null, maxTrainings = 5) {
         // Already meets requirements
         if (this.meetsRequirements(current, required)) {
             return { trainings: [], resultStats: { ...current } };
         }
 
-        const trainingTypes = Object.keys(GameData.trainingEffects);
+        const trainingTypes = Object.keys(GameData.trainingEffects).filter(t => t !== 'comprehensive');
+
+        // If no pool info provided, use simple calculation (legacy mode)
+        if (!poolInfo) {
+            return this._findTrainingSolutionSimple(current, required, trainingTypes, maxTrainings);
+        }
+
+        const { pool, cap, memberStats } = poolInfo;
+        const queue = [{ pool: { ...pool }, trainings: [] }];
+        const visited = new Set();
+
+        while (queue.length > 0) {
+            const { pool: currentPool, trainings } = queue.shift();
+
+            // Don't search beyond max trainings
+            if (trainings.length >= maxTrainings) continue;
+
+            // Try each training type
+            for (const trainingType of trainingTypes) {
+                const effect = GameData.trainingEffects[trainingType];
+
+                // Apply training with redistribution logic
+                const newPool = this.applyTrainingToPool(currentPool, effect, cap);
+
+                // Calculate new total stats
+                const newStats = {
+                    physical: memberStats.physical + newPool.physical,
+                    mental: memberStats.mental + newPool.mental,
+                    tactical: memberStats.tactical + newPool.tactical
+                };
+
+                const newTrainings = [...trainings, trainingType];
+
+                // Check if this meets requirements
+                if (this.meetsRequirements(newStats, required)) {
+                    return {
+                        trainings: newTrainings,
+                        resultStats: newStats,
+                        resultPool: newPool
+                    };
+                }
+
+                // Generate state key for visited check (based on pool state)
+                const stateKey = `${newPool.physical},${newPool.mental},${newPool.tactical}`;
+
+                if (!visited.has(stateKey)) {
+                    visited.add(stateKey);
+                    queue.push({ pool: newPool, trainings: newTrainings });
+                }
+            }
+        }
+
+        return null; // No solution found within max trainings
+    },
+
+    /**
+     * Simple training solution finder (legacy, without pool redistribution)
+     */
+    _findTrainingSolutionSimple(current, required, trainingTypes, maxTrainings) {
         const queue = [{ stats: { ...current }, trainings: [] }];
         const visited = new Set();
 
         while (queue.length > 0) {
             const { stats, trainings } = queue.shift();
 
-            // Don't search beyond max trainings
             if (trainings.length >= maxTrainings) continue;
 
-            // Try each training type
             for (const trainingType of trainingTypes) {
                 const effect = GameData.trainingEffects[trainingType];
                 const newStats = {
@@ -108,7 +237,6 @@ const Calculator = {
 
                 const newTrainings = [...trainings, trainingType];
 
-                // Check if this meets requirements
                 if (this.meetsRequirements(newStats, required)) {
                     return {
                         trainings: newTrainings,
@@ -116,7 +244,6 @@ const Calculator = {
                     };
                 }
 
-                // Generate state key for visited check
                 const stateKey = `${newStats.physical},${newStats.mental},${newStats.tactical}`;
 
                 if (!visited.has(stateKey)) {
@@ -126,7 +253,7 @@ const Calculator = {
             }
         }
 
-        return null; // No solution found within max trainings
+        return null;
     },
 
     /**
@@ -135,11 +262,13 @@ const Calculator = {
      * @param {Object} requirements - Required stats
      * @param {Object} trainingPool - Training pool stats
      * @param {number} missionLevel - Mission level for chemistry conditions
+     * @param {number} squadRank - Squad rank for pool cap calculation
      * @returns {Array} Sorted array of results
      */
-    analyzeAllCombinations(members, requirements, trainingPool = { physical: 0, mental: 0, tactical: 0 }, missionLevel = 1) {
+    analyzeAllCombinations(members, requirements, trainingPool = { physical: 0, mental: 0, tactical: 0 }, missionLevel = 1, squadRank = 3) {
         const combinations = this.getCombinations(members);
         const results = [];
+        const poolCap = GameData.rankCaps[squadRank] || 400;
 
         for (const combo of combinations) {
             // Calculate stats with chemistry bonuses
@@ -172,8 +301,13 @@ const Calculator = {
             if (result.meetsRequirements) {
                 result.score = 1000;
             } else {
-                // Find training solution
-                const solution = this.findTrainingSolution(currentStats, requirements);
+                // Find training solution with pool redistribution logic
+                const poolInfo = {
+                    pool: { ...trainingPool },
+                    cap: poolCap,
+                    memberStats: chemistryResult.totalStats // Stats with chemistry but without pool
+                };
+                const solution = this.findTrainingSolution(currentStats, requirements, poolInfo);
                 result.trainingSolution = solution;
 
                 if (solution) {
@@ -208,7 +342,7 @@ const Calculator = {
     getTopResults(members, requirements, limit = 5, options = {}) {
         const { considerJobChange = false, squadRank = 3, trainingPool = { physical: 0, mental: 0, tactical: 0 }, missionLevel = 1 } = options;
 
-        let allResults = this.analyzeAllCombinations(members, requirements, trainingPool, missionLevel);
+        let allResults = this.analyzeAllCombinations(members, requirements, trainingPool, missionLevel, squadRank);
 
         // If considering job changes, find additional solutions with job changes
         if (considerJobChange) {
