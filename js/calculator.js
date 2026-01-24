@@ -181,6 +181,25 @@ const Calculator = {
             for (const trainingType of trainingTypes) {
                 const effect = GameData.trainingEffects[trainingType];
 
+                // Check if at cap - if so, verify training can be applied
+                const poolTotal = currentPool.physical + currentPool.mental + currentPool.tactical;
+                if (poolTotal >= cap) {
+                    // Find stats that would be reduced
+                    const otherStats = [];
+                    if (effect.physical <= 0) otherStats.push('physical');
+                    if (effect.mental <= 0) otherStats.push('mental');
+                    if (effect.tactical <= 0) otherStats.push('tactical');
+
+                    // Calculate available to reduce
+                    const availableToReduce = otherStats.reduce((sum, stat) => sum + currentPool[stat], 0);
+                    const totalIncrease = Math.max(0, effect.physical) +
+                                          Math.max(0, effect.mental) +
+                                          Math.max(0, effect.tactical);
+
+                    // Skip if not enough to reduce from
+                    if (availableToReduce < totalIncrease) continue;
+                }
+
                 // Apply training with redistribution logic
                 const newPool = this.applyTrainingToPool(currentPool, effect, cap);
 
