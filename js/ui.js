@@ -428,10 +428,10 @@ const UI = {
             this.elements.squadRank.addEventListener('change', (e) => this.onSquadRankChange(e.target.value));
         }
 
-        // Training pool inputs
+        // Training pool inputs - use 'change' event so user can finish typing before validation
         ['poolPhysical', 'poolMental', 'poolTactical'].forEach(id => {
             if (this.elements[id]) {
-                this.elements[id].addEventListener('input', () => this.updateTrainingPoolTotal());
+                this.elements[id].addEventListener('change', () => this.updateTrainingPoolTotal());
             }
         });
 
