@@ -1853,6 +1853,24 @@ body {
     color: var(--text-muted);
 }
 
+.training-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.training-btn.disabled:hover {
+    transform: none;
+    border-color: var(--border-color);
+    background: var(--bg-card);
+}
+
+.training-btn-disabled-reason {
+    font-size: 0.7rem;
+    color: var(--danger);
+    margin-top: 4px;
+}
+
 /* Training confirm modal */
 .modal-small .modal-content {
     max-width: 400px;

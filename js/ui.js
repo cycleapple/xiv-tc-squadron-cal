@@ -1515,17 +1515,60 @@ const UI = {
             return;
         }
 
+        // Get current pool values
+        const currentPool = {
+            physical: parseInt(this.elements.poolPhysical?.value) || 0,
+            mental: parseInt(this.elements.poolMental?.value) || 0,
+            tactical: parseInt(this.elements.poolTactical?.value) || 0
+        };
+        const cap = GameData.rankCaps[this.squadRank] || 400;
+        const currentTotal = currentPool.physical + currentPool.mental + currentPool.tactical;
+        const atCap = currentTotal >= cap;
+
         // Get all trainings (excluding comprehensive since it has no stat changes)
         const trainings = GameData.getAllTrainings().filter(t => t.key !== 'comprehensive');
 
         // Render training grid
-        this.elements.trainingGrid.innerHTML = trainings.map(training => `
-            <button class="training-btn" data-training="${training.key}" onclick="UI.selectTraining('${training.key}')">
-                <img src="${training.icon}" alt="${training.name}" class="training-btn-icon">
-                <span class="training-btn-name">${training.name}</span>
-                <span class="training-btn-desc">${training.desc}</span>
-            </button>
-        `).join('');
+        this.elements.trainingGrid.innerHTML = trainings.map(training => {
+            // Check if training can be used
+            let canUse = true;
+            let disabledReason = '';
+
+            if (atCap) {
+                // Find stats that would be reduced (stats NOT increased by training)
+                const otherStats = [];
+                if (training.physical <= 0) otherStats.push('physical');
+                if (training.mental <= 0) otherStats.push('mental');
+                if (training.tactical <= 0) otherStats.push('tactical');
+
+                // Calculate total available from other stats
+                const availableToReduce = otherStats.reduce((sum, stat) => sum + currentPool[stat], 0);
+
+                // Calculate total increase from training
+                const totalIncrease = Math.max(0, training.physical) +
+                                      Math.max(0, training.mental) +
+                                      Math.max(0, training.tactical);
+
+                // Disable if not enough to reduce from
+                if (availableToReduce < totalIncrease) {
+                    canUse = false;
+                    disabledReason = '屬性不足';
+                }
+            }
+
+            const disabledClass = canUse ? '' : 'disabled';
+            const disabledAttr = canUse ? '' : 'disabled';
+            const onclick = canUse ? `onclick="UI.selectTraining('${training.key}')"` : '';
+
+            return `
+                <button class="training-btn ${disabledClass}" data-training="${training.key}" ${onclick} ${disabledAttr}>
+                    <img src="${training.icon}" alt="${training.name}" class="training-btn-icon">
+                    <span class="training-btn-name">${training.name}</span>
+                    <span class="training-btn-desc">${training.desc}</span>
+                    ${disabledReason ? `<span class="training-btn-disabled-reason">${disabledReason}</span>` : ''}
+                </button>
+            `;
+        }).join('');
 
         this.elements.trainingModal.classList.add('active');
     },
