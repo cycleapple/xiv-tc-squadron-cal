@@ -1523,7 +1523,6 @@ const UI = {
         };
         const cap = GameData.rankCaps[this.squadRank] || 400;
         const currentTotal = currentPool.physical + currentPool.mental + currentPool.tactical;
-        const atCap = currentTotal >= cap;
 
         // Get all trainings (excluding comprehensive since it has no stat changes)
         const trainings = GameData.getAllTrainings().filter(t => t.key !== 'comprehensive');
@@ -1534,7 +1533,13 @@ const UI = {
             let canUse = true;
             let disabledReason = '';
 
-            if (atCap) {
+            // Calculate total increase from training
+            const totalIncrease = Math.max(0, training.physical) +
+                                  Math.max(0, training.mental) +
+                                  Math.max(0, training.tactical);
+
+            // Check if training would push total over cap
+            if (currentTotal + totalIncrease > cap) {
                 // Find stats that would be reduced (stats NOT increased by training)
                 const otherStats = [];
                 if (training.physical <= 0) otherStats.push('physical');
@@ -1543,11 +1548,6 @@ const UI = {
 
                 // Calculate total available from other stats
                 const availableToReduce = otherStats.reduce((sum, stat) => sum + currentPool[stat], 0);
-
-                // Calculate total increase from training
-                const totalIncrease = Math.max(0, training.physical) +
-                                      Math.max(0, training.mental) +
-                                      Math.max(0, training.tactical);
 
                 // Disable if not enough to reduce from
                 if (availableToReduce < totalIncrease) {
@@ -1601,9 +1601,14 @@ const UI = {
             tactical: currentPool.tactical + training.tactical
         };
 
-        // Check if current pool is at or over cap - if so, redistribute
+        // Calculate current and new totals
         const currentTotal = currentPool.physical + currentPool.mental + currentPool.tactical;
-        if (currentTotal >= cap && otherStats.length > 0 && totalIncrease > 0) {
+        const newTotal = newPool.physical + newPool.mental + newPool.tactical;
+
+        // Redistribute if training would push total over cap
+        // This maintains the current total by reducing from other stats
+        if (newTotal > cap && otherStats.length > 0 && totalIncrease > 0) {
+            // Amount to reduce = totalIncrease (to maintain currentTotal)
             let remaining = totalIncrease;
 
             // First pass: try to reduce evenly (in multiples of 20)
@@ -1633,15 +1638,6 @@ const UI = {
         newPool.physical = Math.max(0, newPool.physical);
         newPool.mental = Math.max(0, newPool.mental);
         newPool.tactical = Math.max(0, newPool.tactical);
-
-        // Final check: ensure total doesn't exceed cap (round to multiples of 20)
-        const finalTotal = newPool.physical + newPool.mental + newPool.tactical;
-        if (finalTotal > cap) {
-            const scale = cap / finalTotal;
-            newPool.physical = Math.floor(newPool.physical * scale / 20) * 20;
-            newPool.mental = Math.floor(newPool.mental * scale / 20) * 20;
-            newPool.tactical = Math.floor(newPool.tactical * scale / 20) * 20;
-        }
 
         return newPool;
     },

@@ -31,9 +31,14 @@ const Calculator = {
             tactical: currentPool.tactical + training.tactical
         };
 
-        // Check if we're at or over cap - if so, redistribute
+        // Calculate current and new totals
         const currentTotal = currentPool.physical + currentPool.mental + currentPool.tactical;
-        if (currentTotal >= cap && otherStats.length > 0 && totalIncrease > 0) {
+        const newTotal = newPool.physical + newPool.mental + newPool.tactical;
+
+        // Redistribute if training would push total over cap
+        // This maintains the current total by reducing from other stats
+        if (newTotal > cap && otherStats.length > 0 && totalIncrease > 0) {
+            // Amount to reduce = totalIncrease (to maintain currentTotal)
             let remaining = totalIncrease;
 
             // First pass: try to reduce evenly (in multiples of 20)
@@ -59,19 +64,10 @@ const Calculator = {
             }
         }
 
-        // Ensure no negative values and cap total
+        // Ensure no negative values
         newPool.physical = Math.max(0, newPool.physical);
         newPool.mental = Math.max(0, newPool.mental);
         newPool.tactical = Math.max(0, newPool.tactical);
-
-        // Final check: ensure total doesn't exceed cap
-        const finalTotal = newPool.physical + newPool.mental + newPool.tactical;
-        if (finalTotal > cap) {
-            const scale = cap / finalTotal;
-            newPool.physical = Math.floor(newPool.physical * scale);
-            newPool.mental = Math.floor(newPool.mental * scale);
-            newPool.tactical = Math.floor(newPool.tactical * scale);
-        }
 
         return newPool;
     },
@@ -181,9 +177,14 @@ const Calculator = {
             for (const trainingType of trainingTypes) {
                 const effect = GameData.trainingEffects[trainingType];
 
-                // Check if at cap - if so, verify training can be applied
+                // Calculate total increase from training
+                const totalIncrease = Math.max(0, effect.physical) +
+                                      Math.max(0, effect.mental) +
+                                      Math.max(0, effect.tactical);
+
+                // Check if training would push total over cap
                 const poolTotal = currentPool.physical + currentPool.mental + currentPool.tactical;
-                if (poolTotal >= cap) {
+                if (poolTotal + totalIncrease > cap) {
                     // Find stats that would be reduced
                     const otherStats = [];
                     if (effect.physical <= 0) otherStats.push('physical');
@@ -192,9 +193,6 @@ const Calculator = {
 
                     // Calculate available to reduce
                     const availableToReduce = otherStats.reduce((sum, stat) => sum + currentPool[stat], 0);
-                    const totalIncrease = Math.max(0, effect.physical) +
-                                          Math.max(0, effect.mental) +
-                                          Math.max(0, effect.tactical);
 
                     // Skip if not enough to reduce from
                     if (availableToReduce < totalIncrease) continue;
