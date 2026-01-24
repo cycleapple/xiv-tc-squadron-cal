@@ -619,37 +619,37 @@ const UI = {
         let mental = parseInt(this.elements.poolMental?.value) || 0;
         let tactical = parseInt(this.elements.poolTactical?.value) || 0;
 
-        // Ensure non-negative
-        physical = Math.max(0, physical);
-        mental = Math.max(0, mental);
-        tactical = Math.max(0, tactical);
+        // Round to multiples of 20 and ensure non-negative
+        physical = Math.max(0, Math.round(physical / 20) * 20);
+        mental = Math.max(0, Math.round(mental / 20) * 20);
+        tactical = Math.max(0, Math.round(tactical / 20) * 20);
 
-        // Enforce cap - if total exceeds, scale down proportionally
+        // Enforce cap - if total exceeds, scale down (keeping multiples of 20)
         const total = physical + mental + tactical;
         if (total > cap) {
             const scale = cap / total;
-            physical = Math.floor(physical * scale);
-            mental = Math.floor(mental * scale);
-            tactical = Math.floor(tactical * scale);
+            physical = Math.floor(physical * scale / 20) * 20;
+            mental = Math.floor(mental * scale / 20) * 20;
+            tactical = Math.floor(tactical * scale / 20) * 20;
 
-            // Handle rounding - add remainder to largest stat
-            const newTotal = physical + mental + tactical;
-            const remainder = cap - newTotal;
-            if (remainder > 0) {
+            // Handle remainder - add 20 to largest stat if under cap
+            let newTotal = physical + mental + tactical;
+            while (newTotal + 20 <= cap) {
                 if (physical >= mental && physical >= tactical) {
-                    physical += remainder;
+                    physical += 20;
                 } else if (mental >= tactical) {
-                    mental += remainder;
+                    mental += 20;
                 } else {
-                    tactical += remainder;
+                    tactical += 20;
                 }
+                newTotal += 20;
             }
-
-            // Update input values
-            if (this.elements.poolPhysical) this.elements.poolPhysical.value = physical;
-            if (this.elements.poolMental) this.elements.poolMental.value = mental;
-            if (this.elements.poolTactical) this.elements.poolTactical.value = tactical;
         }
+
+        // Always update input values to reflect rounding
+        if (this.elements.poolPhysical) this.elements.poolPhysical.value = physical;
+        if (this.elements.poolMental) this.elements.poolMental.value = mental;
+        if (this.elements.poolTactical) this.elements.poolTactical.value = tactical;
 
         const finalTotal = physical + mental + tactical;
 
@@ -1563,8 +1563,8 @@ const UI = {
         if (currentTotal >= cap && otherStats.length > 0 && totalIncrease > 0) {
             let remaining = totalIncrease;
 
-            // First pass: try to reduce evenly
-            const reducePerStat = Math.floor(totalIncrease / otherStats.length);
+            // First pass: try to reduce evenly (in multiples of 20)
+            const reducePerStat = Math.floor(totalIncrease / otherStats.length / 20) * 20;
 
             for (const stat of otherStats) {
                 const maxReduce = Math.min(reducePerStat, newPool[stat]);
@@ -1572,13 +1572,13 @@ const UI = {
                 remaining -= maxReduce;
             }
 
-            // Second pass: handle remainder
-            while (remaining > 0) {
+            // Second pass: handle remainder (in steps of 20)
+            while (remaining >= 20) {
                 let reduced = false;
                 for (const stat of otherStats) {
-                    if (newPool[stat] > 0 && remaining > 0) {
-                        newPool[stat]--;
-                        remaining--;
+                    if (newPool[stat] >= 20 && remaining >= 20) {
+                        newPool[stat] -= 20;
+                        remaining -= 20;
                         reduced = true;
                     }
                 }
@@ -1591,13 +1591,13 @@ const UI = {
         newPool.mental = Math.max(0, newPool.mental);
         newPool.tactical = Math.max(0, newPool.tactical);
 
-        // Final check: ensure total doesn't exceed cap
+        // Final check: ensure total doesn't exceed cap (round to multiples of 20)
         const finalTotal = newPool.physical + newPool.mental + newPool.tactical;
         if (finalTotal > cap) {
             const scale = cap / finalTotal;
-            newPool.physical = Math.floor(newPool.physical * scale);
-            newPool.mental = Math.floor(newPool.mental * scale);
-            newPool.tactical = Math.floor(newPool.tactical * scale);
+            newPool.physical = Math.floor(newPool.physical * scale / 20) * 20;
+            newPool.mental = Math.floor(newPool.mental * scale / 20) * 20;
+            newPool.tactical = Math.floor(newPool.tactical * scale / 20) * 20;
         }
 
         return newPool;

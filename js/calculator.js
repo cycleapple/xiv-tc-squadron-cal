@@ -36,8 +36,8 @@ const Calculator = {
         if (currentTotal >= cap && otherStats.length > 0 && totalIncrease > 0) {
             let remaining = totalIncrease;
 
-            // First pass: try to reduce evenly
-            const reducePerStat = Math.floor(totalIncrease / otherStats.length);
+            // First pass: try to reduce evenly (in multiples of 20)
+            const reducePerStat = Math.floor(totalIncrease / otherStats.length / 20) * 20;
 
             for (const stat of otherStats) {
                 const maxReduce = Math.min(reducePerStat, newPool[stat]);
@@ -45,13 +45,13 @@ const Calculator = {
                 remaining -= maxReduce;
             }
 
-            // Second pass: handle remainder
-            while (remaining > 0) {
+            // Second pass: handle remainder (in steps of 20)
+            while (remaining >= 20) {
                 let reduced = false;
                 for (const stat of otherStats) {
-                    if (newPool[stat] > 0 && remaining > 0) {
-                        newPool[stat]--;
-                        remaining--;
+                    if (newPool[stat] >= 20 && remaining >= 20) {
+                        newPool[stat] -= 20;
+                        remaining -= 20;
                         reduced = true;
                     }
                 }
