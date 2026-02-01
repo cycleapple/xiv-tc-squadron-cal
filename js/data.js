@@ -639,19 +639,19 @@ const GameData = {
         'physical-boost': {
             id: 1, name: '體能', nameEn: 'Physical',
             stat: 'physical', scope: 'self',
-            values: [10, 15, 20],
+            values: [10, 15, 20, 30, 40, 50],
             desc: '體能＋XX％'
         },
         'mental-boost': {
             id: 2, name: '心智', nameEn: 'Mental',
             stat: 'mental', scope: 'self',
-            values: [10, 15, 20],
+            values: [10, 15, 20, 30, 40, 50],
             desc: '心智＋XX％'
         },
         'tactical-boost': {
             id: 3, name: '戰術', nameEn: 'Tactical',
             stat: 'tactical', scope: 'self',
-            values: [10, 15, 20],
+            values: [10, 15, 20, 30, 40, 50],
             desc: '戰術＋XX％'
         },
         'all-physical-boost': {
