@@ -752,8 +752,21 @@ const UI = {
      */
     populateChemistryValues() {
         const select = this.elements.chemistryValue;
-        const effectKey = this.elements.chemistryEffect?.value;
-        if (!select || !effectKey) return;
+        let effectKey = this.elements.chemistryEffect?.value;
+        if (!select) return;
+
+        // If no effect is selected yet, default to the first effect
+        if (!effectKey) {
+            const effects = GameData.getAllChemistryEffects();
+            if (effects.length > 0) {
+                effectKey = effects[0].key;
+                if (this.elements.chemistryEffect) {
+                    this.elements.chemistryEffect.value = effectKey;
+                }
+            }
+        }
+
+        if (!effectKey) return;
 
         const effect = GameData.getChemistryEffect(effectKey);
         if (!effect) return;
